@@ -1,0 +1,4 @@
+
+      [paste.filter_factory]
+      cimiapp = cimi:filter_factory
+      
