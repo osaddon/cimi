@@ -19,7 +19,7 @@ from webob import Request
 from nova import log as logging
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 from nova.api.openstack.wsgi import XMLDeserializer, JSONDeserializer
-from nova.api.cimiapp.cimiutils import best_match
+from cimiapp.cimiutils import best_match
 import copy
 import json
 

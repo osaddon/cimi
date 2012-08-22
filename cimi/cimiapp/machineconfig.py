@@ -19,30 +19,31 @@ from webob import Request, Response
 import json
 import copy
 
-from nova.api.cimiapp.cimibase import Controller
-from nova.api.cimiapp.cimibase import make_response_data
-from nova.api.cimiapp.cimiutils import concat, match_up
+from cimiapp.cimibase import Controller
+from cimiapp.cimibase import make_response_data
+from cimiapp.cimiutils import concat, match_up
 
 LOG = logging.getLogger(__name__)
 
 
-class MachineImageCtrler(Controller):
+class MachineConfigCtrler(Controller):
     """
     Handles machine image request.
     """
     def __init__(self, conf, app, req, tenant_id, *args):
-        super(MachineImageCtrler, self).__init__(conf, app, req, tenant_id,
-                                                 *args)
-        self.os_path = '/%s/images' % (tenant_id)
-        self.image_id = args[0] if len(args) > 0 else ''
-        self.entity_uri = 'MachineImage'
-        self.metadata = {'attributes': {'property': ['minRam', 'minDisk']},
-                         'plurals': {'properties':'property'},
+        super(MachineConfigCtrler, self).__init__(conf, app, req, tenant_id,
+                                                  *args)
+        self.os_path = '/%s/flavors' % (tenant_id)
+        self.config_id = args[0] if len(args) > 0 else ''
+        self.entity_uri = 'MachineConfiguration'
+        self.metadata = {'attributes': {},
+                         'plurals': {'disks': 'disk'},
                          'sequence': {self.entity_uri:
-                                      ['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'state', 'type', 'imageLocation',
-                                       'operations']}}
+                                      ['id', 'name', 'description', 'created',
+                                       'updated', 'property', 'cpu', 'memory',
+                                       'disks', 'operation'],
+                                      'disk': ['capacity']}}
+
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -51,26 +52,30 @@ class MachineImageCtrler(Controller):
         """
 
         env = self._fresh_env(req)
-        env['PATH_INFO'] = concat(self.os_path, '/', self.image_id)
+        env['PATH_INFO'] = concat(self.os_path,
+                                  '/', '/'.join(parts))
 
         new_req = Request(env)
         res = new_req.get_response(self.app)
         if res.status_int == 200:
-            image = json.loads(res.body).get('image')
-            if image:
+            flavor = json.loads(res.body).get('flavor')
+            if flavor:
                 body = {}
+                body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
                 body['id'] = concat(self.tenant_id,
                                 '/', self.entity_uri,
-                                '/', self.image_id)
-                match_up(body, image, 'name', 'name')
-                match_up(body, image, 'created', 'created')
-                match_up(body, image, 'updated', 'updated')
-                body['imageLocation'] = body['id']
+                                '/', self.config_id)
+                match_up(body, flavor, 'name', 'name')
+                match_up(body, flavor, 'cpu', 'vcpus')
+                match_up(body, flavor, 'memory', 'ram')
+                body['disks'] = []
+                body['disks'].append({'capacity': flavor.get('disk'),
+                                      'units': 'gb'})
 
             if self.res_content_type == 'application/xml':
+                body.pop('resourceURI')
                 response_data = {self.entity_uri: body}
             else:
-                body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
                 response_data = body
 
             new_content = make_response_data(response_data,
@@ -89,22 +94,23 @@ class MachineImageCtrler(Controller):
         return res
 
 
-class MachineImageColCtrler(Controller):
+class MachineConfigColCtrler(Controller):
     """
     Handles machine image collection request.
     """
     def __init__(self, conf, app, req, tenant_id, *args):
-        super(MachineImageColCtrler, self).__init__(conf, app, req, tenant_id,
-                                                    *args)
-        self.os_path = '/%s/images' % (tenant_id)
-        self.entity_uri = 'MachineImageCollection'
+        super(MachineConfigColCtrler, self).__init__(conf, app, req, tenant_id,
+                                                     *args)
+        self.os_path = '/%s/flavors' % (tenant_id)
+        self.entity_uri = 'MachineConfigurationCollection'
         self.metadata = {'attributes': {'Collection': 'resourceURI',
                                        'Entry': 'resourceURI',
-                                       'machineImage': 'href'},
+                                       'machineConfiguration': 'href'},
                          'plurals': {'entries': 'Entry'},
                          'sequence': {'Collection':
                                       ['id', 'entries'],
-                                      'Entry': ['id', 'machineImage']}}
+                                      'Entry': ['id',
+                                                  'machineConfiguration']}}
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -133,17 +139,18 @@ class MachineImageColCtrler(Controller):
             body['id'] = concat(self.tenant_id,
                                 '/', self.entity_uri)
             body['entries'] = []
-            images = content.get('images',[])
-            for image in images:
+            flavors = content.get('flavors',[])
+            for flavor in flavors:
                 entry = {}
                 entry['resourceURI'] = concat(self.uri_prefix,
                                             self.entity_uri, 'Entry')
-                entry['machineImage'] = {'href': concat(self.tenant_id,
-                                                        '/', 'MachineImage/',
-                                                        image['id'])}
+                entry['machineConfiguration'] = \
+                    {'href': concat(self.tenant_id,
+                                    '/', 'MachineConfiguration/',
+                                    flavor['id'])}
                 entry['id'] = concat(self.tenant_id, '/',
                                      self.entity_uri, 'Entry/',
-                                     image['id'])
+                                     flavor['id'])
 
                 body['entries'].append(entry)
 
@@ -156,7 +163,6 @@ class MachineImageColCtrler(Controller):
                                              self.res_content_type,
                                              self.metadata,
                                              self.uri_prefix)
-
             resp = Response()
             self._fixup_cimi_header(resp)
             resp.headers['Content-Type'] = self.res_content_type

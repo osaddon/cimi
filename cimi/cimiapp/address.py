@@ -19,12 +19,12 @@ from webob import Request, Response
 import json
 import copy
 
-from nova.api.cimiapp.cimibase import Controller
-from nova.api.cimiapp.cimibase import CimiXMLSerializer
-from nova.api.cimiapp.cimibase import make_response_data
-from nova.api.cimiapp.cimibase import get_request_data
-from nova.api.cimiapp.cimiutils import concat, get_err_response
-from nova.api.cimiapp.cimiutils import match_up, sub_path
+from cimiapp.cimibase import Controller
+from cimiapp.cimibase import CimiXMLSerializer
+from cimiapp.cimibase import make_response_data
+from cimiapp.cimibase import get_request_data
+from cimiapp.cimiutils import concat, get_err_response
+from cimiapp.cimiutils import match_up, sub_path
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
 LOG = logging.getLogger(__name__)

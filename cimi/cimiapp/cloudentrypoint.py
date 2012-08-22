@@ -19,9 +19,9 @@ from webob import Request, Response
 import json
 import copy
 
-from nova.api.cimiapp.cimibase import Controller
-from nova.api.cimiapp.cimibase import make_response_data
-from nova.api.cimiapp.cimiutils import concat
+from cimiapp.cimibase import Controller
+from cimiapp.cimibase import make_response_data
+from cimiapp.cimiutils import concat
 
 LOG = logging.getLogger(__name__)
 

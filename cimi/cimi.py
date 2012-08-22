@@ -19,19 +19,19 @@ from nova import log as logging
 from urllib import unquote
 from webob import Request
 
-from nova.api.cimiapp.machine import (MachineCtrler,
+from cimiapp.machine import (MachineCtrler,
                                       MachineColCtrler)
-from nova.api.cimiapp.machineimage import (MachineImageCtrler,
+from cimiapp.machineimage import (MachineImageCtrler,
                                            MachineImageColCtrler)
-from nova.api.cimiapp.machineconfig import (MachineConfigCtrler,
+from cimiapp.machineconfig import (MachineConfigCtrler,
                                             MachineConfigColCtrler)
-from nova.api.cimiapp.network import (NetworkInterfaceCtrler,
+from cimiapp.network import (NetworkInterfaceCtrler,
                                       NetworkInterfaceColCtrler)
-from nova.api.cimiapp.cloudentrypoint import CloudEntryPointCtrler
-from nova.api.cimiapp.address import (NetworkAddressCtrler,
+from cimiapp.cloudentrypoint import CloudEntryPointCtrler
+from cimiapp.address import (NetworkAddressCtrler,
                                       NetworkAddressColCtrler)
 
-from nova.api.cimiapp.cimiutils import get_err_response
+from cimiapp.cimiutils import get_err_response
 
 LOG = logging.getLogger(__name__)
 
