@@ -1,4 +1,4 @@
-CDMI for OpenStack's Swift
+CIMI for OpenStack's Nova
 --------------------------
 
 A Python egg that adds support for the [CIMI protocol] to OpenStack Nova.
