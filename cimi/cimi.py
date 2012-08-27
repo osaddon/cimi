@@ -94,7 +94,8 @@ class CIMIMiddleware(object):
                 return response(env, start_response)
             elif controller:
                 req = Request(env)
-                ctrler = controller(self.conf, self.app, req, tenant_id, *parts)
+                ctrler = controller(self.conf, self.app, req,
+                                    tenant_id, *parts)
                 method = env.get('REQUEST_METHOD').upper()
                 if hasattr(ctrler, method) and not method.startswith('_'):
                     res = getattr(ctrler, method)(req, *parts)
@@ -107,19 +108,3 @@ class CIMIMiddleware(object):
                 return res(env, start_response)
         else:
             return self.app(env, start_response)
-
-
-def filter_factory(global_conf, **local_conf):
-    """Standard filter factory to use the middleware with paste.deploy"""
-
-    conf = global_conf.copy()
-    conf.update(local_conf)
-
-    # Process the cdmi root and strip off leading or trailing space and slashes
-    conf.setdefault('request_prefix', '/cimiv1')
-    conf.setdefault('os_version', '/v2')
-
-    def cimi_filter(app):
-        return CIMIMiddleware(app, conf)
-
-    return cimi_filter
