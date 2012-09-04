@@ -26,7 +26,6 @@ In `/etc/nova/api-paste.ini`, add cimi filter before osapi_compute_app_v2
     [composite:openstack_compute_api_v2]
     use = call:nova.api.auth:pipeline_factory
     noauth = faultwrap sizelimit noauth ratelimit cimi osapi_compute_app_v2
-    deprecated = faultwrap sizelimit auth ratelimit cimi osapi_compute_app_v2
     keystone = faultwrap sizelimit authtoken keystonecontext ratelimit cimi osapi_compute_app_v2
     keystone_nolimit = faultwrap sizelimit authtoken keystonecontext cimi osapi_compute_app_v2
 
@@ -36,6 +35,13 @@ And add the following section to the file:
     use = egg:cimiapi#cimiapp
     request_prefix = /cimiv1
     os_version = /v2
+
+To enable logging for cimi, add the following three lines in /etc/nova/nova.conf file
+
+    use_syslog=False
+    logfile=/opt/stack/logs/nova.log
+    default_log_levels=nova=ERROR,cimi=INFO
+
 
 Running tests
 =============
