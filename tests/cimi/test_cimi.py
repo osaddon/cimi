@@ -1,5 +1,3 @@
-# vim: tabstop=4 shiftwidth=4 softtabstop=4
-
 # Copyright 2011 Cloudscaling, Inc.
 # Author: Matthew Hooker <matt@cloudscaling.com>
 # All Rights Reserved.
@@ -26,7 +24,7 @@ class CIMITestCase(unittest.TestCase):
 
     def setUp(self):
         try:
-            self.client = TestOpenStackClient('admin', 'admin',
+            self.client = TestOpenStackClient('admin', 'ps',
                                          'http://localhost:5000/v2.0/tokens')
             self.client.project_id = 'admin'
             self.client.tenant_name = 'admin'
