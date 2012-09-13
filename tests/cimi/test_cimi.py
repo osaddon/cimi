@@ -1,6 +1,4 @@
-# Copyright 2011 Cloudscaling, Inc.
-# Author: Matthew Hooker <matt@cloudscaling.com>
-# All Rights Reserved.
+# Copyright (c) 2012 IBM
 #
 #    Licensed under the Apache License, Version 2.0 (the "License"); you may
 #    not use this file except in compliance with the License. You may obtain
@@ -14,6 +12,7 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 
+from test_utils import get_config
 from lxml import etree
 import unittest
 import json
@@ -24,16 +23,18 @@ class CIMITestCase(unittest.TestCase):
 
     def setUp(self):
         try:
-            self.client = TestOpenStackClient('admin', 'ps',
-                                         'http://localhost:5000/v2.0/tokens')
-            self.client.project_id = 'admin'
-            self.client.tenant_name = 'admin'
+            config = get_config()
+            
+            self.client = TestOpenStackClient(config.get('os_username'),
+                                              config.get('os_password'),
+                                              config.get('auth_url'))
+            self.client.tenant_name = config.get('os_tenant_name')
             self._authenticate()
 
             self.ns = 'http://schemas.dmtf.org/cimi/1/'
             self.nsmap = {'ns':self.ns}
-            self.host = 'http://localhost:8774'
-            self.baseURI = 'http://localhost:8774/cimiv1'
+            self.host = config.get('api_url')
+            self.baseURI = self.host + '/cimiv1'
             self.image_id = self._prepare_id('images')
             self.flavor_id = self._prepare_id('flavors')
             self.server_id = self._prepare_id('servers')
@@ -47,9 +48,7 @@ class CIMITestCase(unittest.TestCase):
         pass
 
     def _authenticate(self):
-        '''
-        Authenticate with Nova
-        '''
+        ''' Authenticate with Nova '''
 
         auth_body = '''
             {
