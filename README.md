@@ -12,8 +12,8 @@ Setup
 3. Install this python egg: `sudo python setup.py install`
 4. Configure cimi to work with Nova:
 
-In `/etc/nova/api-paste.ini`, add cimiv1 path to enable the cimi request,
-the path should look like the following __/cimiv1: openstack_compute_api_v2__
+In `/etc/nova/api-paste.ini`, add __/cimiv1: openstack_compute_api_v2__ path to
+enable the cimi request.
 
     [composite:osapi_compute]
     use = call:nova.api.openstack.urlmap:urlmap_factory
