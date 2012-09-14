@@ -48,7 +48,7 @@ Running tests
 =============
 
 test cases created under tests directory, to run the test cases, first change
-the test.conf and make sure that the values for each variable is correct. then
+the test.conf and make sure that the values for each variable are correct. then
 use the following command to run the test cases.
 
     py.test tests/cimi/test_cimi.py
