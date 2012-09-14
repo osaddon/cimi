@@ -12,22 +12,23 @@ Setup
 3. Install this python egg: `sudo python setup.py install`
 4. Configure cimi to work with Nova:
 
-In `/etc/nova/api-paste.ini`, add cimiv1 path to enable the cimi request
+In `/etc/nova/api-paste.ini`, add cimiv1 path to enable the cimi request,
+the path should look like the following __/cimiv1: openstack_compute_api_v2__
 
     [composite:osapi_compute]
     use = call:nova.api.openstack.urlmap:urlmap_factory
     /: oscomputeversions
     /v1.1: openstack_compute_api_v2
     /v2: openstack_compute_api_v2
-    **/cimiv1: openstack_compute_api_v2**
+    /cimiv1: openstack_compute_api_v2
 
-In `/etc/nova/api-paste.ini`, add cimi filter before osapi_compute_app_v2
+In `/etc/nova/api-paste.ini`, add __cimi__ filter before osapi_compute_app_v2
 
     [composite:openstack_compute_api_v2]
     use = call:nova.api.auth:pipeline_factory
-    noauth = faultwrap sizelimit noauth ratelimit **cimi** osapi_compute_app_v2
-    keystone = faultwrap sizelimit authtoken keystonecontext ratelimit <b>cimi</b> osapi_compute_app_v2
-    keystone_nolimit = faultwrap sizelimit authtoken keystonecontext **cimi** osapi_compute_app_v2
+    noauth = faultwrap sizelimit noauth ratelimit cimi osapi_compute_app_v2
+    keystone = faultwrap sizelimit authtoken keystonecontext ratelimit cimi osapi_compute_app_v2
+    keystone_nolimit = faultwrap sizelimit authtoken keystonecontext cimi osapi_compute_app_v2
 
 And add the following section to the file:
 
