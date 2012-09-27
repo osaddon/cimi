@@ -36,12 +36,13 @@ class CloudEntryPointCtrler(Controller):
         self.metadata = {'attributes': {'machineConfigs': 'href',
                                         'machineImages': 'href',
                                         'machines': 'href',
+                                        'volumes': 'href',
                                         'CloudEntryPoint': 'resourceURI'},
                          'sequence': {self.entity_uri:
                                       ['id', 'name', 'description',
                                        'created', 'updated', 'property',
-                                       'baseURI', 'machineConfigs',
-                                       'machineImages', 'machines',
+                                       'baseURI', 'machines','machineConfigs',
+                                       'machineImages', 'volumes',
                                        'operation']}}
 
     # Use GET to handle all container read related operations.
@@ -55,17 +56,18 @@ class CloudEntryPointCtrler(Controller):
         body['name'] = self.entity_uri
         body['description'] = 'Cloud Entry Point'
         body['baseURI'] = concat(req.host_url, self.request_prefix, '/')
-        body['machineConfigs'] = \
-            {'href': concat(self.tenant_id,
-                            '/', 'MachineConfigurationCollection')}
 
-        body['machineImages'] = \
-            {'href': concat(self.tenant_id,
-                            '/', 'MachineImageCollection')}
+        body['machineConfigs'] = {'href':
+                '/'.join([self.tenant_id, 'MachineConfigurationCollection'])}
 
-        body['machines'] = \
-            {'href': concat(self.tenant_id,
-                            '/', 'MachineCollection')}
+        body['machines'] = {'href':
+                '/'.join([self.tenant_id, 'MachineCollection'])}
+
+        body['machineImages'] = {'href':
+                '/'.join([self.tenant_id, 'MachineImageCollection'])}
+
+        body['volumes'] = {'href':
+                '/'.join([self.tenant_id, 'VolumeCollection'])}
 
         if self.res_content_type == 'application/xml':
             response_data = {'CloudEntryPoint': body}

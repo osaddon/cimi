@@ -18,6 +18,7 @@
 
 from webob import Request, Response
 from nova.openstack.common import log as logging
+from eventlet.green.httplib import HTTPConnection, HTTPSConnection
 
 CIMI_CONTENT_TYPES = ['application/json', 'application/xml']
 LOG = logging.getLogger(__name__)
@@ -108,3 +109,62 @@ def match_up(data_to, data_from, key_to, key_from):
     data, key = get_member(data_to, key_to, True)
     if key:
         data[key] = get_member(data_from, key_from, False)[0]
+
+
+def access_resource(env, method, path, get_body=False, query_string=None):
+    """
+    Use this method to send a http request
+    If the resource exists, then it should return True with headers.
+    If the resource does not exist, then it should return False with None
+    headers
+    If the get_body is set to True, the response body will also be returned
+    """
+
+    # Create a new Request
+    req = Request(env)
+    if req.scheme.lower() == 'https':
+        connection = HTTPSConnection
+        ssl = True
+    else:
+        connection = HTTPConnection
+        ssl = False
+
+    headers = {}
+    headers['Accept'] = 'application/json'
+    for header, value in req.headers.items():
+        headers[header] = value
+
+    method = 'GET' if not method else method
+    path = req.path if not path else path
+
+    conn = connection(req.server_name, req.server_port)
+
+    conn.request(method, path, '', headers)
+    res = conn.getresponse()
+
+    if res.status == 404:
+        conn.close()
+        return False, {}, None
+    elif res.status == 200 or res.status == 204:
+        values = {}
+        header_list = res.getheaders()
+        for header in header_list:
+            values[header[0]] = header[1]
+        if get_body:
+            length = res.getheader('content-length')
+            if length:
+                body = res.read(int(length))
+            else:
+                body = res.read()
+        else:
+            body = ""
+        conn.close()
+        return True, values, body
+    else:
+        values = {}
+        header_list = res.getheaders()
+        for header in header_list:
+            values[header[0]] = header[1]
+        conn.close()
+        return True, values, None
+

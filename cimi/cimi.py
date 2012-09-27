@@ -30,6 +30,7 @@ from cimiapp.network import (NetworkInterfaceCtrler,
 from cimiapp.cloudentrypoint import CloudEntryPointCtrler
 from cimiapp.address import (NetworkAddressCtrler,
                                       NetworkAddressColCtrler)
+from cimiapp.volume import VolumeColCtrler
 
 from cimiapp.cimiutils import get_err_response
 
@@ -50,7 +51,8 @@ class CIMIMiddleware(object):
                    'networkinterfacescollection': NetworkInterfaceColCtrler,
                    'machinenetworkinterfaceaddress': NetworkAddressCtrler,
                    'machinenetworkinterfaceaddressescollection':
-                        NetworkAddressColCtrler}
+                        NetworkAddressColCtrler,
+                    'volumecollection': VolumeColCtrler}
 
     def __init__(self, app, conf, *args, **kwargs):
         self.app = app
@@ -86,6 +88,8 @@ class CIMIMiddleware(object):
             return resp, None, None, None
 
     def __call__(self, env, start_response):
+        LOG.info('the env')
+        LOG.info(env)
         if env.get('SCRIPT_NAME', '').startswith(self.request_prefix):
             path = unquote(env.get('PATH_INFO', ''))
             response, controller, tenant_id, parts = self.get_controller(path)
