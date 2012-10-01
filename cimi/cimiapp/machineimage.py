@@ -100,10 +100,9 @@ class MachineImageColCtrler(Controller):
         self.metadata = {'attributes': {'Collection': 'resourceURI',
                                        'Entry': 'resourceURI',
                                        'machineImage': 'href'},
-                         'plurals': {'entries': 'Entry'},
+                         'plurals': {'machineImages': 'MachineImage'},
                          'sequence': {'Collection':
-                                      ['id', 'entries'],
-                                      'Entry': ['id', 'machineImage']}}
+                                      ['id', 'count', 'machineImages']}}
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -131,21 +130,19 @@ class MachineImageColCtrler(Controller):
             body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
             body['id'] = concat(self.tenant_id,
                                 '/', self.entity_uri)
-            body['entries'] = []
+            body['machineImages'] = []
             images = content.get('images',[])
             for image in images:
                 entry = {}
-                entry['resourceURI'] = concat(self.uri_prefix,
-                                            self.entity_uri, 'Entry')
-                entry['machineImage'] = {'href': concat(self.tenant_id,
-                                                        '/', 'MachineImage/',
-                                                        image['id'])}
-                entry['id'] = concat(self.tenant_id, '/',
-                                     self.entity_uri, 'Entry/',
-                                     image['id'])
+                entry['resourceURI'] = '/'.join([self.uri_prefix,
+                                              'MachineImage'])
+                entry['id'] = '/'.join([self.tenant_id,
+                                     'MachineImage',
+                                     image['id']])
 
-                body['entries'].append(entry)
+                body['machineImages'].append(entry)
 
+            body['count'] = len(body['machineImages'])
             if self.res_content_type == 'application/xml':
                 response_data = {'Collection': body}
             else:

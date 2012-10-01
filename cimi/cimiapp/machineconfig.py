@@ -105,11 +105,11 @@ class MachineConfigColCtrler(Controller):
         self.metadata = {'attributes': {'Collection': 'resourceURI',
                                        'Entry': 'resourceURI',
                                        'machineConfiguration': 'href'},
-                         'plurals': {'entries': 'Entry'},
+                         'plurals': {'machineConfigurations':
+                                     'MachineConfiguration'},
                          'sequence': {'Collection':
-                                      ['id', 'entries'],
-                                      'Entry': ['id',
-                                                  'machineConfiguration']}}
+                                      ['id', 'count',
+                                       'machineConfigurations']}}
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -137,21 +137,19 @@ class MachineConfigColCtrler(Controller):
             body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
             body['id'] = concat(self.tenant_id,
                                 '/', self.entity_uri)
-            body['entries'] = []
+            body['machineConfigurations'] = []
             flavors = content.get('flavors',[])
             for flavor in flavors:
                 entry = {}
-                entry['resourceURI'] = concat(self.uri_prefix,
-                                            self.entity_uri, 'Entry')
-                entry['machineConfiguration'] = \
-                    {'href': concat(self.tenant_id,
-                                    '/', 'MachineConfiguration/',
-                                    flavor['id'])}
-                entry['id'] = concat(self.tenant_id, '/',
-                                     self.entity_uri, 'Entry/',
-                                     flavor['id'])
+                entry['resourceURI'] = '/'.join([self.uri_prefix,
+                                            'MachineConfiguration'])
+                entry['id'] = '/'.join([self.tenant_id,
+                                        'MachineConfiguration',
+                                        flavor['id']])
 
-                body['entries'].append(entry)
+                body['machineConfigurations'].append(entry)
+
+            body['count'] = len(body['machineConfigurations'])
 
             if self.res_content_type == 'application/xml':
                 response_data = {'Collection': body}
