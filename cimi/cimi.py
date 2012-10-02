@@ -18,6 +18,9 @@ Cimi middleware.
 from nova.openstack.common import log as logging
 from urllib import unquote
 from webob import Request
+from urlparse import urlparse
+import json
+import threading
 
 from cimiapp.machine import (MachineCtrler,
                                       MachineColCtrler)
@@ -36,6 +39,7 @@ from cimiapp.cimiutils import get_err_response
 
 LOG = logging.getLogger(__name__)
 
+LOCK = threading.Lock()
 
 class CIMIMiddleware(object):
     """CIMI Middleware"""
@@ -59,6 +63,37 @@ class CIMIMiddleware(object):
         self.conf = conf
         self.request_prefix = self.conf.get('request_prefix')
         self.prefix_length = len(self.request_prefix)
+
+    def _process_config(self, service_name):
+        endpoint = self.conf.get(service_name)
+        if endpoint:
+            parts = urlparse(endpoint)
+            self.conf.setdefault(service_name + '_host', parts.hostname)
+            self.conf.setdefault(service_name + '_port', parts.port)
+            self.conf.setdefault(service_name + '_scheme', parts.scheme)
+
+    def _process_config_header(self, env):
+        """
+        this method get the catalog endpoints from the header if keystone
+        is used.
+        """
+        if not self.conf.get('CONFIG_DONE'):
+            LOG.info('processing header')
+            # critical section, acquire a lock
+            if LOCK.acquire():
+                self.conf.setdefault('CONFIG_DONE', True)
+                catalog_str = env.get('HTTP_X_SERVICE_CATALOG')
+                if catalog_str:
+                    catalogs = json.loads(catalog_str)
+                    for catalog in catalogs:
+                        name = catalog['type'] + '_endpoint'
+                        if not self.conf.get(name):
+                            uri = catalog['endpoints'][0]['publicURL']
+                            self.conf.setdefault(name, uri)
+
+                self._process_config('volume_endpoint')
+                self._process_config('compute_endpoint')
+                LOCK.release()
 
     def get_controller(self, path):
         """Get the request controller according to the request path
@@ -88,9 +123,10 @@ class CIMIMiddleware(object):
             return resp, None, None, None
 
     def __call__(self, env, start_response):
-        LOG.info('the env')
+
         LOG.info(env)
         if env.get('SCRIPT_NAME', '').startswith(self.request_prefix):
+            self._process_config_header(env)
             path = unquote(env.get('PATH_INFO', ''))
             response, controller, tenant_id, parts = self.get_controller(path)
 

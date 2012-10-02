@@ -12,11 +12,15 @@
 #    License for the specific language governing permissions and limitations
 #    under the License.
 from cimi import CIMIMiddleware
+from nova.openstack.common import log as logging
+
+LOG = logging.getLogger(__name__)
 
 
 def filter_factory(global_conf, **local_conf):
     """Standard filter factory to use the middleware with paste.deploy"""
 
+    LOG.info('cimi implementation!')
     conf = global_conf.copy()
     conf.update(local_conf)
 

@@ -194,10 +194,9 @@ class VolumeColCtrler(Controller):
         self.metadata = {'attributes': {'Collection': 'resourceURI',
                                        'Entry': 'resourceURI',
                                        'volume': 'href'},
-                         'plurals': {'entries': 'Entry'},
+                         'plurals': {'volumes': 'Volume'},
                          'sequence': {'Collection':
-                                      ['id', 'count', 'entries', 'operation'],
-                                      'Entry': ['id', 'volume']}}
+                                      ['id', 'count', 'volumes', 'operation']}}
 
         self.volume_metadata = {'attributes':
             {'memory': ['quantity', 'units'], 'property': 'key',
@@ -217,11 +216,11 @@ class VolumeColCtrler(Controller):
         Handle GET machine request
         """
 
-        LOG.info('before sending GET')
         env = self._fresh_env(req)
-        env['SERVER_PORT'] = '8776'
+        env['SERVER_PORT'] = self.conf.get('volume_endpoint_port')
         env['SCRIPT_NAME'] = '/v1'
-        env['HTTP_HOST'] = '%s:%s'%(env['SERVER_NAME'], '8776')
+        env['HTTP_HOST'] = '%s:%s'%(self.conf.get('volume_endpoint_host'),
+                                    self.conf.get('volume_endpoint_port'))
 
         status, headers, body = access_resource(env, 'GET',
                                                '/v1/' + self.os_path,
@@ -232,20 +231,18 @@ class VolumeColCtrler(Controller):
             body['resourceURI'] = '/'.join([self.uri_prefix.rstrip('/'),
                                             self.entity_uri])
             body['id'] = '/'.join([self.tenant_id, self.entity_uri])
-            body['entries'] = []
+            body['volumes'] = []
             volumes = content.get('volumes', [])
             for volume in volumes:
                 entry = {}
                 entry['resourceURI'] = '/'.join([self.uri_prefix.rstrip('/'),
-                                            self.entity_uri, 'Entry'])
-                entry['volume'] = {'href':
-                    '/'.join([self.tenant_id, 'Volume', volume['id']])}
-                entry['id'] = '/'.join([self.tenant_id, self.entity_uri,
-                                        'Entry', volume['id']])
+                                                 'Volume'])
+                entry['id'] = '/'.join([self.tenant_id, 'Volume',
+                                        volume['id']])
 
-                body['entries'].append(entry)
+                body['volumes'].append(entry)
 
-            body['count'] = len(body['entries'])
+            body['count'] = len(body['volumes'])
             if self.res_content_type == 'application/xml':
                 response_data = {'Collection': body}
             else:
