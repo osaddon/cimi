@@ -38,8 +38,7 @@ class MachineCtrler(Controller):
                                             *args)
         self.os_path = '/%s/servers' % (tenant_id)
         self.entity_uri = 'Machine'
-        self.metadata = {'attributes': {'memory': ['quantity', 'units'],
-                                        'property': 'key',
+        self.metadata = {'attributes': {'property': 'key',
                                         'volumes': 'href',
                                         'networkInterfaces': 'href',
                                         'Entry': 'resourceURI',
@@ -81,7 +80,13 @@ class MachineCtrler(Controller):
             match_up(body, data, 'name', 'name')
             match_up(body, data, 'created', 'created')
             match_up(body, data, 'updated', 'updated')
-            match_up(body, data, 'state', 'status')
+            #match_up(body, data, 'state', 'status')
+            if data.get('status') == 'ACTIVE' :
+                body['state'] = 'STARTED'
+            elif data.get('status') == 'BUILDING':
+                body['state'] = 'CREATING'
+            else:
+                body['state'] = 'ERROR'
             body['networkInterfaces'] = {'href': concat(self.tenant_id,
                     '/networkInterfacesCollection/', parts[0])}
 
@@ -94,12 +99,9 @@ class MachineCtrler(Controller):
             if res.status_int == 200:
                 flavor = json.loads(res.body).get('flavor')
                 match_up(body, flavor, 'cpu', 'vcpus')
-                ram = {}
-                match_up(ram, flavor, 'quantity', 'ram')
-                ram['units'] = 'MB'
-                body['memory'] = ram
+                body['memory'] = int(flavor.get('ram')) * 1000
                 disks = []
-                disks.append({'capacity': int(flavor.get('disk')) * 1000})
+                disks.append({'capacity': int(flavor.get('disk')) * 1000000})
                 body['disks'] = disks
 
             # deal with machine operations
@@ -194,13 +196,12 @@ class MachineColCtrler(Controller):
         self.metadata = {'attributes': {'Collection': 'resourceURI',
                                        'Entry': 'resourceURI',
                                        'machine': 'href'},
-                         'plurals': {'entries': 'Entry'},
+                         'plurals': {'machines': 'Machine'},
                          'sequence': {'Collection':
-                                      ['id', 'entries', 'operation'],
-                                      'Entry': ['id', 'machine']}}
+                                      ['id', 'count', 'machines']}}
 
         self.machine_metadata = {'attributes':
-            {'memory': ['quantity', 'units'], 'property': 'key',
+            {'property': 'key',
              'volumes': 'href', 'networkInterfaces': 'href',
              'Entry': 'resourceURI', 'operation': ['rel', 'href']},
              'plurals': {'entries': 'Entry'},
@@ -226,21 +227,19 @@ class MachineColCtrler(Controller):
             body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
             body['id'] = concat(self.tenant_id,
                                 '/', self.entity_uri)
-            body['entries'] = []
+            body['machines'] = []
             machines = content.get('servers',[])
             for machine in machines:
                 entry = {}
                 entry['resourceURI'] = concat(self.uri_prefix,
-                                            self.entity_uri, 'Entry')
-                entry['machine'] = {'href': concat(self.tenant_id,
-                                                   '/', 'Machine/',
-                                                   machine['id'])}
+                                            'Machine')
                 entry['id'] = concat(self.tenant_id, '/',
-                                     self.entity_uri, 'Entry/',
+                                     'machine/',
                                      machine['id'])
 
-                body['entries'].append(entry)
+                body['machines'].append(entry)
 
+            body['count'] = len(body['machines'])
             if self.res_content_type == 'application/xml':
                 response_data = {'Collection': body}
             else:
