@@ -24,6 +24,7 @@ from cimibase import make_response_data
 from cimibase import get_request_data
 from cimiutils import concat, get_err_response
 from cimiutils import match_up, sub_path
+from cimiutils import map_status
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
 LOG = logging.getLogger(__name__)
@@ -80,13 +81,9 @@ class MachineCtrler(Controller):
             match_up(body, data, 'name', 'name')
             match_up(body, data, 'created', 'created')
             match_up(body, data, 'updated', 'updated')
-            #match_up(body, data, 'state', 'status')
-            if data.get('status') == 'ACTIVE' :
-                body['state'] = 'STARTED'
-            elif data.get('status') == 'BUILDING':
-                body['state'] = 'CREATING'
-            else:
-                body['state'] = 'ERROR'
+            match_up(body, data, 'state', 'status')
+            map_status(body, 'state')
+
             body['networkInterfaces'] = {'href': concat(self.tenant_id,
                     '/networkInterfacesCollection/', parts[0])}
 
@@ -182,7 +179,7 @@ class MachineCtrler(Controller):
             resp = get_err_response('NotImplemented')
 
         return resp
-
+    
 
 class MachineColCtrler(Controller):
     """

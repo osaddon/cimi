@@ -110,6 +110,13 @@ def match_up(data_to, data_from, key_to, key_from):
     if key:
         data[key] = get_member(data_from, key_from, False)[0]
 
+def map_status(map, key):
+    if map.get(key) == 'ACTIVE' :
+        map[key] = 'STARTED'
+    elif map.get(key) == 'BUILDING':
+        map[key] = 'CREATING'
+    else:
+        map[key] = 'ERROR'    
 
 def access_resource(env, method, path, get_body=False, query_string=None):
     """
