@@ -134,8 +134,8 @@ class MachineImageColCtrler(Controller):
             images = content.get('images',[])
             for image in images:
                 entry = {}
-                entry['resourceURI'] = '/'.join([self.uri_prefix,
-                                              'MachineImage'])
+                entry['resourceURI'] = concat(self.uri_prefix,
+                                              'MachineImage')
                 entry['id'] = '/'.join([self.tenant_id,
                                      'MachineImage',
                                      image['id']])
