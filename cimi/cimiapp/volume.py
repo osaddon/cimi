@@ -18,7 +18,7 @@ from webob import Request, Response
 import json
 import copy
 
-from cimibase import Controller
+from cimibase import Controller, Consts
 from cimibase import CimiXMLSerializer
 from cimibase import make_response_data
 from cimibase import get_request_data
@@ -191,24 +191,8 @@ class VolumeColCtrler(Controller):
                                                      *args)
         self.os_path = '/%s/volumes' % (tenant_id)
         self.entity_uri = 'VolumeCollection'
-        self.metadata = {'attributes': {'Collection': 'resourceURI',
-                                       'Entry': 'resourceURI',
-                                       'volume': 'href'},
-                         'plurals': {'volumes': 'Volume'},
-                         'sequence': {'Collection':
-                                      ['id', 'count', 'volumes', 'operation']}}
-
-        self.volume_metadata = {'attributes':
-            {'memory': ['quantity', 'units'], 'property': 'key',
-             'volumes': 'href', 'networkInterfaces': 'href',
-             'Entry': 'resourceURI', 'operation': ['rel', 'href']},
-             'plurals': {'entries': 'Entry'},
-             'sequence': {'Machine': ['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'state', 'cpu', 'memory', 'disks',
-                                       'networkInterfaces', 'credentials',
-                                       'operations']}}
-
+        self.metadata = Consts.VOLUME_COL_METADATA
+        self.volume_metadata = Consts.VOLUME_METADATA
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -276,72 +260,71 @@ class VolumeColCtrler(Controller):
             return get_err_response('MalformedBody')
 
         if request_data:
-            data = request_data.get('body').get('MachineCreate')
+            data = request_data.get('body').get('VolumeCreate')
             if not data:
                 data = request_data.get('body')
+                if data:
+                    action = data.get('resourceURI')
+                    # this is to ensure that the json format contains
+                    # the right indicator for volume create
+                    if not action or action != ''.join([self.uri_prefix,
+                                          'VolumeCreate']):
+                        data = None
             if data:
                 new_body = {}
-                match_up(new_body, data, 'name', 'name')
+                match_up(new_body, data, 'display_name', 'name')
+                match_up(new_body, data, 'display_description', 'description')
+                match_up(new_body, data, 'size',
+                         'volumeTemplate/volumeConfig/capacity')
 
-                keys = {'/cimiv1': '/v2',
-                        'machineConfig': 'flavors',
-                        'machineImage': 'images'}
+                LOG.info(new_body)
+                env = self._fresh_env(req)
+                env['SERVER_PORT'] = self.conf.get('volume_endpoint_port')
+                env['SCRIPT_NAME'] = '/v1'
+                env['HTTP_HOST'] = '%s:%s' % \
+                    (self.conf.get('volume_endpoint_host'),
+                     self.conf.get('volume_endpoint_port'))
+                new_body_json = json.dumps({'volume': new_body})
+                env['CONTENT_LENGTH'] = len(new_body_json)
 
-                match_up(new_body, data, 'imageRef',
-                         'machineTemplate/machineImage/href')
-                new_body['imageRef'] = sub_path(new_body.get('imageRef'),
-                                                keys)
+                status, headers, body = access_resource(env, 'POST',
+                                               '/v1' + self.os_path,
+                                               True, None,
+                                               new_body_json)
 
-                match_up(new_body, data, 'flavorRef',
-                         'machineTemplate/machineConfig/href')
-                new_body['flavorRef'] = sub_path(new_body.get('flavorRef'),
-                                                 keys)
-
-                new_req = self._fresh_request(req)
-
-                adminPass = data.get('credentials', {}).get('password')
-                if adminPass:
-                    new_body['adminPass'] = adminPass
-
-                new_req.body = json.dumps({'server':new_body})
-                resp = new_req.get_response(self.app)
-                if resp.status_int == 201:
+                if status:
                     # resource created successfully, we redirect the request
                     # to query machine
-                    resp_data = json.loads(resp.body)
-                    id = resp_data.get('server').get('id')
-                    env = self._fresh_env(req)
-                    env['PATH_INFO'] = concat(self.request_prefix,
-                                              '/', self.tenant_id,
-                                              '/servers/', id)
-                    env['REQUEST_METHOD'] = 'GET'
-                    new_req = Request(env)
-                    resp = new_req.get_response(self.app)
-                    resp.status = 201
-                elif resp.status_int == 202:
-                    resp_body_data = json.loads(resp.body).get('server')
-                    id = resp_body_data.get('id')
+                    resp_data = json.loads(body)
+                    data = resp_data.get('volume')
                     resp_data = {}
-                    match_up(resp_data, data, 'name', 'name')
-                    match_up(resp_data, data, 'description', 'description')
-                    resp_data['id'] = concat(self.tenant_id, '/machine/', id)
-                    resp_data['credentials'] = {'userName': 'root',
-                        'password': resp_body_data.get('adminPass')}
+                    match_up(resp_data, data, 'name', 'display_name')
+                    match_up(resp_data, data, 'description',
+                             'display_description')
+                    match_up(resp_data, data, 'capacity', 'size')
+                    match_up(resp_data, data, 'created', 'created_at')
+                    resp_data['id'] = ''.join([self.tenant_id,
+                                               '/volume/',
+                                               data.get('id')])
                     if self.res_content_type == 'application/xml':
-                        response_data = {'Machine': resp_data}
+                        response_data = {'Volume': resp_data}
                     else:
+                        resp_data['resourceURI'] = ''.join([self.uri_prefix,
+                                                            'Volume'])
                         response_data = resp_data
 
                     new_content = make_response_data(response_data,
                                              self.res_content_type,
-                                             self.machine_metadata,
+                                             self.volume_metadata,
                                              self.uri_prefix)
                     resp = Response()
                     self._fixup_cimi_header(resp)
                     resp.headers['Content-Type'] = self.res_content_type
-                    resp.status = 202
+                    resp.status = 201
                     resp.body = new_content
-                return resp
+                    return resp
+                else:
+                    return get_err_response('BadRequest')
             else:
                 return get_err_response('BadRequest')
         else:

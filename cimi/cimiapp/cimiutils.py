@@ -118,7 +118,8 @@ def map_status(map, key):
     else:
         map[key] = 'ERROR'    
 
-def access_resource(env, method, path, get_body=False, query_string=None):
+def access_resource(env, method, path, get_body=False,
+                    query_string=None, body=None):
     """
     Use this method to send a http request
     If the resource exists, then it should return True with headers.
@@ -146,13 +147,14 @@ def access_resource(env, method, path, get_body=False, query_string=None):
 
     conn = connection(req.server_name, req.server_port)
 
-    conn.request(method, path, '', headers)
+    conn.request(method, path, body, headers)
     res = conn.getresponse()
 
-    if res.status == 404:
+    if res.status == 404 or res.status == 413:
         conn.close()
         return False, {}, None
-    elif res.status == 200 or res.status == 204:
+    elif (res.status == 200 or res.status == 204 or
+          res.status == 201):
         values = {}
         header_list = res.getheaders()
         for header in header_list:

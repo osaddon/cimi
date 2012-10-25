@@ -143,6 +143,22 @@ class Consts(object):
     REQUEST_PREFIX_LENGTH = len(REQUEST_PREFIX)
     RESPONSE_VERSION_KEY = 'CIMI-Specification-Version'
     RESPONSE_VERSION_VALUE = '1.0.0'
+    VOLUME_COL_METADATA = {'attributes':
+        {'Collection': 'resourceURI', 'Entry': 'resourceURI',
+         'volume': 'href'},
+        'plurals': {'volumes': 'Volume'},
+        'sequence': {'Collection': ['id', 'count', 'volumes', 'operation']}}
+
+    VOLUME_METADATA = {'attributes':
+        {'property': 'key', 'volumes': 'href',
+         'images': 'href', 'meters': 'href',
+         'Entry': 'resourceURI', 'operation': ['rel', 'href']},
+        'plurals': {'entries': 'Entry'},
+        'sequence': {'Volume': ['id', 'name', 'description',
+                                'created', 'updated', 'property',
+                                'state', 'type', 'capacity',
+                                'bootable', 'images', 'meters',
+                                'eventLog', 'operations']}}
 
 
 class Controller(object):
