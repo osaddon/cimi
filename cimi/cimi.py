@@ -33,7 +33,7 @@ from cimiapp.network import (NetworkInterfaceCtrler,
 from cimiapp.cloudentrypoint import CloudEntryPointCtrler
 from cimiapp.address import (NetworkAddressCtrler,
                                       NetworkAddressColCtrler)
-from cimiapp.volume import VolumeColCtrler
+from cimiapp.volume import VolumeColCtrler, VolumeCtrler
 
 from cimiapp.cimiutils import get_err_response
 
@@ -56,7 +56,8 @@ class CIMIMiddleware(object):
                    'machinenetworkinterfaceaddress': NetworkAddressCtrler,
                    'machinenetworkinterfaceaddressescollection':
                         NetworkAddressColCtrler,
-                    'volumecollection': VolumeColCtrler}
+                    'volumecollection': VolumeColCtrler,
+                    'volume': VolumeCtrler}
 
     def __init__(self, app, conf, *args, **kwargs):
         self.app = app

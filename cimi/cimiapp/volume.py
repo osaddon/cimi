@@ -23,7 +23,7 @@ from cimibase import CimiXMLSerializer
 from cimibase import make_response_data
 from cimibase import get_request_data
 from cimiutils import concat, get_err_response
-from cimiutils import match_up, sub_path, access_resource
+from cimiutils import match_up, sub_path, access_resource, has_extra
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
 LOG = logging.getLogger(__name__)
@@ -36,29 +36,17 @@ class VolumeCtrler(Controller):
     def __init__(self, conf, app, req, tenant_id, *args):
         super(VolumeCtrler, self).__init__(conf, app, req, tenant_id,
                                             *args)
-        self.os_path = '/%s/servers' % (tenant_id)
+        self.os_path = '/%s/volumes/%s' % (tenant_id, args[0])
         self.entity_uri = 'Volume'
-        self.metadata = {'attributes': {'memory': ['quantity', 'units'],
-                                        'property': 'key',
-                                        'volumes': 'href',
-                                        'networkInterfaces': 'href',
-                                        'Entry': 'resourceURI',
-                                        'operation': ['rel', 'href']},
+        self.metadata = {'attributes': {'volume': 'href',
+                                        'Entry': 'resourceURI'},
                          'plurals': {'entries': 'Entry'},
-                         'sequence': {'Machine':
+                         'sequence': {'Volume':
                                       ['id', 'name', 'description',
                                        'created', 'updated', 'property',
-                                       'state', 'cpu', 'memory', 'disks',
-                                       'networkInterfaces',
-                                       'operations']}}
+                                       'state']}}
         self.actions = {concat(self.uri_prefix, 'action/restart'): 'reboot',
                         concat(self.uri_prefix, 'action/stop'): 'delete'}
-
-    def _create_op(self, name, id):
-        entry = {}
-        entry['rel'] = name
-        entry['href'] = concat(self.tenant_id, '/machine/', id)
-        return entry
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -67,51 +55,31 @@ class VolumeCtrler(Controller):
         """
 
         env = self._fresh_env(req)
-        env['PATH_INFO'] = concat(self.os_path,
-                                  '/', '/'.join(parts))
-        new_req = Request(env)
-        res = new_req.get_response(self.app)
+        env['SERVER_PORT'] = self.conf.get('volume_endpoint_port')
+        env['SCRIPT_NAME'] = '/v1'
+        env['HTTP_HOST'] = '%s:%s' % \
+            (self.conf.get('volume_endpoint_host'),
+             self.conf.get('volume_endpoint_port'))
+        env['CONTENT_LENGTH'] = 0
 
-        if res.status_int == 200:
-            data = json.loads(res.body).get('server')
+        status, headers, body, status_code = access_resource(env, 'GET',
+            '/v1' + self.os_path, True, None, None)
+
+        if status:
+            data = json.loads(body).get('volume')
 
             body = {}
-            body['id'] = concat(self.tenant_id, '/machine/',
-                                parts[0])
-            match_up(body, data, 'name', 'name')
-            match_up(body, data, 'created', 'created')
-            match_up(body, data, 'updated', 'updated')
+            body['id'] = concat(self.tenant_id, '/Volume/', parts[0])
+            match_up(body, data, 'name', 'display_name')
+            match_up(body, data, 'description', 'display_description')
+            match_up(body, data, 'created', 'created_at')
+            match_up(body, data, 'capacity', 'size')
+            body['capacity'] = int(body['capacity']) * 1000
             match_up(body, data, 'state', 'status')
-            body['networkInterfaces'] = {'href': concat(self.tenant_id,
-                    '/networkInterfacesCollection/', parts[0])}
 
-            # Send a request to get the details on flavor
-            env = self._fresh_env(req)
-            env['PATH_INFO'] = '/%s/flavors/%s' % (self.tenant_id, 
-                                                   data['flavor']['id'])
-            new_req = Request(env)
-            res = new_req.get_response(self.app)
-            if res.status_int == 200:
-                flavor = json.loads(res.body).get('flavor')
-                match_up(body, flavor, 'cpu', 'vcpus')
-                ram = {}
-                match_up(ram, flavor, 'quantity', 'ram')
-                ram['units'] = 'MB'
-                body['memory'] = ram
-                disks = []
-                disks.append({'capacity': int(flavor.get('disk')) * 1000})
-                body['disks'] = disks
-
-            # deal with machine operations
-            operations = []
-            name = concat(self.uri_prefix, 'action/stop')
-            operations.append(self._create_op(name, parts[0]))
-            name = concat(self.uri_prefix, 'action/restart')
-            operations.append(self._create_op(name, parts[0]))
-            body['operations'] = operations
 
             if self.res_content_type == 'application/xml':
-                response_data = {'Machine': body}
+                response_data = {'Volume': body}
             else:
                 body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
                 response_data = body
@@ -123,62 +91,29 @@ class VolumeCtrler(Controller):
             resp = Response()
             self._fixup_cimi_header(resp)
             resp.headers['Content-Type'] = self.res_content_type
-            resp.status = 200
+            resp.status = status_code
             resp.body = new_content
             return resp
         else:
             return res
 
-    def _delete(self, req, request_data, *parts):
+    def DELETE(self, req, *parts):
         """
-        Handle the stop machine request
+        Handle the delete volume request
         """
         env = self._fresh_env(req)
-        env['PATH_INFO'] = concat(self.os_path, '/', parts[0])
-        env['REQUEST_METHOD'] = 'DELETE'
-        new_req = Request(env)
-        res = new_req.get_response(self.app)
-        return res
+        env['SERVER_PORT'] = self.conf.get('volume_endpoint_port')
+        env['SCRIPT_NAME'] = '/v1'
+        env['HTTP_HOST'] = '%s:%s' % \
+            (self.conf.get('volume_endpoint_host'),
+             self.conf.get('volume_endpoint_port'))
+        env['CONTENT_LENGTH'] = 0
 
-    def _reboot(self, req, request_data, *parts):
-        """
-        Handle the machine reboot request
-        """
-        data = {}
-        force = request_data.get('force', False)
-        if isinstance(force, str):
-            force = 'HARD' if force.lower() == 'true' else 'SOFT'
-        else:
-            force = 'HARD' if force else 'SOFT'
-        data['reboot'] = {'type': force}
-        env = self._fresh_env(req)
-        env['PATH_INFO'] = concat(self.os_path, '/', parts[0], '/action')
-        env['CONTENT_TYPE'] = 'application/json'
-        new_req = Request(env)
-        new_req.body = json.dumps(data)
-        res = new_req.get_response(self.app)
+        status, headers, body, status_code = access_resource(env, 'DELETE',
+            '/v1' + self.os_path, True, None, None)
 
-        return res
-
-    def POST(self, req, *parts):
-        """
-        Handle Machine operations
-        """
-        try:
-            request_data = get_request_data(req.body, self.req_content_type)
-        except Exception as error:
-            return get_err_response('MalformedBody')
-
-        request_data = request_data.get('body', {})
-        if request_data.get('Action'):
-            request_data = request_data.get('Action')
-        action = request_data.get('action', 'notexist')
-        method = self.actions.get(action)
-        if method:
-            resp = getattr(self, '_' + method)(req, request_data, *parts)
-        else:
-            resp = get_err_response('NotImplemented')
-
+        resp = Response()
+        resp.status = status_code
         return resp
 
 
@@ -206,7 +141,7 @@ class VolumeColCtrler(Controller):
         env['HTTP_HOST'] = '%s:%s'%(self.conf.get('volume_endpoint_host'),
                                     self.conf.get('volume_endpoint_port'))
 
-        status, headers, body = access_resource(env, 'GET',
+        status, headers, body, status_code = access_resource(env, 'GET',
                                                '/v1/' + self.os_path,
                                                True, None)
         if status:
@@ -276,8 +211,16 @@ class VolumeColCtrler(Controller):
                 match_up(new_body, data, 'display_description', 'description')
                 match_up(new_body, data, 'size',
                          'volumeTemplate/volumeConfig/capacity')
+                # map the properties to metadata
+                match_up(new_body, data, 'metadata', 'properties')
+                # check if there are some extra things
+                if has_extra(data, {'resourceURI': None,
+                                    'name': None, 'description': None,
+                                    'properties': None,
+                                    'volumeTemplate': {'volumeConfig':
+                                                       {'capacity': None}}}):
+                    return get_err_response('BadRequest')
 
-                LOG.info(new_body)
                 env = self._fresh_env(req)
                 env['SERVER_PORT'] = self.conf.get('volume_endpoint_port')
                 env['SCRIPT_NAME'] = '/v1'
@@ -287,10 +230,8 @@ class VolumeColCtrler(Controller):
                 new_body_json = json.dumps({'volume': new_body})
                 env['CONTENT_LENGTH'] = len(new_body_json)
 
-                status, headers, body = access_resource(env, 'POST',
-                                               '/v1' + self.os_path,
-                                               True, None,
-                                               new_body_json)
+                status, headers, body, status_cdoe = access_resource(env,
+                    'POST', '/v1' + self.os_path, True, None, new_body_json)
 
                 if status:
                     # resource created successfully, we redirect the request

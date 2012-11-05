@@ -110,6 +110,29 @@ def match_up(data_to, data_from, key_to, key_from):
     if key:
         data[key] = get_member(data_from, key_from, False)[0]
 
+
+def match_up_extra(data_to, data_from, keys_to_exclude):
+
+    for key in data_from:
+        if key in keys_to_exclude:
+            pass
+        else:
+            data_to[key] = data_from.get(key)
+
+
+def has_extra(data_from, keys_to_exclude):
+    for key in data_from:
+        print key
+        exclude_keys = keys_to_exclude.keys()
+        if key in exclude_keys:
+            value = keys_to_exclude.get(key)
+            if value:
+                if has_extra(data_from.get(key), value):
+                    return True
+        else:
+            return True
+    return False
+
 def map_status(map, key):
     if map.get(key) == 'ACTIVE' :
         map[key] = 'STARTED'
@@ -117,6 +140,7 @@ def map_status(map, key):
         map[key] = 'CREATING'
     else:
         map[key] = 'ERROR'    
+
 
 def access_resource(env, method, path, get_body=False,
                     query_string=None, body=None):
@@ -152,7 +176,7 @@ def access_resource(env, method, path, get_body=False,
 
     if res.status == 404 or res.status == 413:
         conn.close()
-        return False, {}, None
+        return False, {}, None, res.status
     elif (res.status == 200 or res.status == 204 or
           res.status == 201):
         values = {}
@@ -168,12 +192,12 @@ def access_resource(env, method, path, get_body=False,
         else:
             body = ""
         conn.close()
-        return True, values, body
+        return True, values, body, res.status
     else:
         values = {}
         header_list = res.getheaders()
         for header in header_list:
             values[header[0]] = header[1]
         conn.close()
-        return True, values, None
+        return True, values, None, res.status
 
