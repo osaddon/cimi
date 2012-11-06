@@ -172,6 +172,12 @@ class Controller(object):
         self.res_content_type = best_match(req.environ.get('HTTP_ACCEPT', ''))
         self.req_content_type = best_match(req.environ.get('CONTENT_TYPE', ''))
 
+    def _create_op(self, name, href):
+        entry = {}
+        entry['rel'] = name
+        entry['href'] = href
+        return entry
+
     def _fresh_request(self, req):
         env = copy.copy(req.environ)
 

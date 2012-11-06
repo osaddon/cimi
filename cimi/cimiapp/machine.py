@@ -54,12 +54,6 @@ class MachineCtrler(Controller):
         self.actions = {concat(self.uri_prefix, 'action/restart'): 'reboot',
                         concat(self.uri_prefix, 'action/stop'): 'delete'}
 
-    def _create_op(self, name, id):
-        entry = {}
-        entry['rel'] = name
-        entry['href'] = concat(self.tenant_id, '/machine/', id)
-        return entry
-
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
         """
@@ -103,10 +97,11 @@ class MachineCtrler(Controller):
 
             # deal with machine operations
             operations = []
-            name = concat(self.uri_prefix, 'action/stop')
-            operations.append(self._create_op(name, parts[0]))
-            name = concat(self.uri_prefix, 'action/restart')
-            operations.append(self._create_op(name, parts[0]))
+            action_name = concat(self.uri_prefix, 'action/stop')
+            action_url = '/'.join([self.tenant_id, 'machine', parts[0]])
+            operations.append(self._create_op(action_name, action_url))
+            action_name = concat(self.uri_prefix, 'action/restart')
+            operations.append(self._create_op(action_name, action_url))
             body['operations'] = operations
 
             if self.res_content_type == 'application/xml':
@@ -192,21 +187,23 @@ class MachineColCtrler(Controller):
         self.entity_uri = 'MachineCollection'
         self.metadata = {'attributes': {'Collection': 'resourceURI',
                                        'Entry': 'resourceURI',
-                                       'machine': 'href'},
-                         'plurals': {'machines': 'Machine'},
+                                       'machine': 'href',
+                                       'operation': ['rel', 'href']},
+                         'plurals': {'machines': 'Machine',
+                                     'operations': 'operation'},
                          'sequence': {'Collection':
-                                      ['id', 'count', 'machines']}}
+                                      ['id', 'count', 'machines',
+                                       'operation']}}
 
         self.machine_metadata = {'attributes':
-            {'property': 'key',
-             'volumes': 'href', 'networkInterfaces': 'href',
-             'Entry': 'resourceURI', 'operation': ['rel', 'href']},
-             'plurals': {'entries': 'Entry'},
-             'sequence': {'Machine': ['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'state', 'cpu', 'memory', 'disks',
-                                       'networkInterfaces', 'credentials',
-                                       'operations']}}
+            {'property': 'key', 'volumes': 'href',
+             'networkInterfaces': 'href', 'operation': ['rel', 'href']},
+            'plurals': {'entries': 'Entry'},
+            'sequence': {'Machine': ['id', 'name', 'description',
+                                     'created', 'updated', 'property',
+                                     'state', 'cpu', 'memory', 'disks',
+                                     'networkInterfaces', 'credentials',
+                                     'operations']}}
 
 
     # Use GET to handle all container read related operations.
@@ -221,9 +218,11 @@ class MachineColCtrler(Controller):
         if res.status_int == 200:
             content = json.loads(res.body)
             body = {}
-            body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
             body['id'] = concat(self.tenant_id,
                                 '/', self.entity_uri)
+            body['resourceURI'] = '/'.join([self.uri_prefix,
+                                            self.entity_uri])
+
             body['machines'] = []
             machines = content.get('servers',[])
             for machine in machines:
@@ -237,6 +236,13 @@ class MachineColCtrler(Controller):
                 body['machines'].append(entry)
 
             body['count'] = len(body['machines'])
+            # deal with machine operations
+            operations = []
+            operations.append(self._create_op('add', 
+                                              '/'.join([self.tenant_id,
+                                                       'machineCollection'])))
+            body['operations'] = operations
+
             if self.res_content_type == 'application/xml':
                 response_data = {'Collection': body}
             else:
@@ -275,27 +281,32 @@ class MachineColCtrler(Controller):
                 new_body = {}
                 match_up(new_body, data, 'name', 'name')
 
-                keys = {'/cimiv1': '/v2',
-                        'machineConfig': 'flavors',
-                        'machineImage': 'images'}
+                if (data.get('machineTemplate') is None or
+                    data.get('machineTemplate').get('machineImage') is None or
+                    data.get('machineTemplate').get('machineConfig') is None):
+                    return get_err_response('BadRequest')
 
                 match_up(new_body, data, 'imageRef',
-                         'machineTemplate/machineImage/href')
-                new_body['imageRef'] = sub_path(new_body.get('imageRef'),
-                                                keys)
+                         'machineTemplate/machineImage/id')
+
+                new_body['imageRef'] = new_body.get('imageRef').split('/')[-1]
 
                 match_up(new_body, data, 'flavorRef',
-                         'machineTemplate/machineConfig/href')
-                new_body['flavorRef'] = sub_path(new_body.get('flavorRef'),
-                                                 keys)
+                         'machineTemplate/machineConfig/id')
+                new_body['flavorRef'] = \
+                    new_body.get('flavorRef').split('/')[-1]
 
-                new_req = self._fresh_request(req)
+                if (new_body.get('flavorRef') is None or
+                    new_body.get('imageRef') is None):
+                    return get_err_response('BadRequest')
 
                 adminPass = data.get('credentials', {}).get('password')
                 if adminPass:
                     new_body['adminPass'] = adminPass
 
-                new_req.body = json.dumps({'server':new_body})
+                new_req = self._fresh_request(req)
+
+                new_req.body = json.dumps({'server': new_body})
                 resp = new_req.get_response(self.app)
                 if resp.status_int == 201:
                     # resource created successfully, we redirect the request
@@ -315,7 +326,6 @@ class MachineColCtrler(Controller):
                     id = resp_body_data.get('id')
                     resp_data = {}
                     match_up(resp_data, data, 'name', 'name')
-                    match_up(resp_data, data, 'description', 'description')
                     resp_data['id'] = concat(self.tenant_id, '/machine/', id)
                     resp_data['credentials'] = {'userName': 'root',
                         'password': resp_body_data.get('adminPass')}

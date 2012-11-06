@@ -122,7 +122,6 @@ def match_up_extra(data_to, data_from, keys_to_exclude):
 
 def has_extra(data_from, keys_to_exclude):
     for key in data_from:
-        print key
         exclude_keys = keys_to_exclude.keys()
         if key in exclude_keys:
             value = keys_to_exclude.get(key)
