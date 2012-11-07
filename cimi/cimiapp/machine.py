@@ -92,7 +92,8 @@ class MachineCtrler(Controller):
                 match_up(body, flavor, 'cpu', 'vcpus')
                 body['memory'] = int(flavor.get('ram')) * 1000
                 disks = []
-                disks.append({'capacity': int(flavor.get('disk')) * 1000000})
+                disks.append({'capacity': int(flavor.get('disk')) * 1000000,
+                              'format':''})
                 body['disks'] = disks
 
             # deal with machine operations
@@ -288,18 +289,18 @@ class MachineColCtrler(Controller):
                     return get_err_response('BadRequest')
 
                 match_up(new_body, data, 'imageRef',
-                         'machineTemplate/machineImage/id')
-
-                new_body['imageRef'] = new_body.get('imageRef').split('/')[-1]
+                         'machineTemplate/machineImage/href')
 
                 match_up(new_body, data, 'flavorRef',
-                         'machineTemplate/machineConfig/id')
-                new_body['flavorRef'] = \
-                    new_body.get('flavorRef').split('/')[-1]
+                         'machineTemplate/machineConfig/href')
 
                 if (new_body.get('flavorRef') is None or
                     new_body.get('imageRef') is None):
                     return get_err_response('BadRequest')
+
+                new_body['imageRef'] = new_body.get('imageRef').split('/')[-1]
+                new_body['flavorRef'] = \
+                    new_body.get('flavorRef').split('/')[-1]
 
                 adminPass = data.get('credentials', {}).get('password')
                 if adminPass:
