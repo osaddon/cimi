@@ -107,7 +107,8 @@ class MachineCtrler(Controller):
             if self.res_content_type == 'application/xml':
                 response_data = {'Machine': body}
             else:
-                body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
+                body['resourceURI'] = '/'.join([self.uri_prefix,
+                                               self.entity_uri])
                 response_data = body
 
             new_content = make_response_data(response_data,
@@ -227,8 +228,8 @@ class MachineColCtrler(Controller):
             machines = content.get('servers',[])
             for machine in machines:
                 entry = {}
-                entry['resourceURI'] = concat(self.uri_prefix,
-                                            'Machine')
+                entry['resourceURI'] = '/'.join([self.uri_prefix,
+                                                 'Machine'])
                 entry['id'] = concat(self.tenant_id, '/',
                                      'machine/',
                                      machine['id'])

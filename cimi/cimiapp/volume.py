@@ -69,7 +69,7 @@ class VolumeCtrler(Controller):
             data = json.loads(body).get('volume')
 
             body = {}
-            body['id'] = concat(self.tenant_id, '/Volume/', parts[0])
+            body['id'] = '/'.join([self.tenant_id, 'Volume', parts[0]])
             match_up(body, data, 'name', 'display_name')
             match_up(body, data, 'description', 'display_description')
             match_up(body, data, 'created', 'created_at')
@@ -81,7 +81,8 @@ class VolumeCtrler(Controller):
             if self.res_content_type == 'application/xml':
                 response_data = {'Volume': body}
             else:
-                body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
+                body['resourceURI'] = '/'.join([self.uri_prefix,
+                                                self.entity_uri])
                 response_data = body
 
             new_content = make_response_data(response_data,
@@ -147,14 +148,14 @@ class VolumeColCtrler(Controller):
         if status:
             content = json.loads(body)
             body = {}
-            body['resourceURI'] = '/'.join([self.uri_prefix.rstrip('/'),
+            body['resourceURI'] = '/'.join([self.uri_prefix,
                                             self.entity_uri])
             body['id'] = '/'.join([self.tenant_id, self.entity_uri])
             body['volumes'] = []
             volumes = content.get('volumes', [])
             for volume in volumes:
                 entry = {}
-                entry['resourceURI'] = '/'.join([self.uri_prefix.rstrip('/'),
+                entry['resourceURI'] = '/'.join([self.uri_prefix,
                                                  'Volume'])
                 entry['id'] = '/'.join([self.tenant_id, 'Volume',
                                         volume['id']])
@@ -202,7 +203,7 @@ class VolumeColCtrler(Controller):
                     action = data.get('resourceURI')
                     # this is to ensure that the json format contains
                     # the right indicator for volume create
-                    if not action or action != ''.join([self.uri_prefix,
+                    if not action or action != '/'.join([self.uri_prefix,
                                           'VolumeCreate']):
                         data = None
             if data:

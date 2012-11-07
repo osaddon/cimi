@@ -168,7 +168,7 @@ class Controller(object):
         self.tenant_id = tenant_id
         self.request_prefix = self.conf.get('request_prefix')
         self.os_version = self.conf.get('os_version')
-        self.uri_prefix = 'http://schemas.dmtf.org/cimi/1/'
+        self.uri_prefix = 'http://schemas.dmtf.org/cimi/1'
         self.res_content_type = best_match(req.environ.get('HTTP_ACCEPT', ''))
         self.req_content_type = best_match(req.environ.get('CONTENT_TYPE', ''))
 

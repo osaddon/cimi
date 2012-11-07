@@ -60,16 +60,16 @@ class MachineConfigCtrler(Controller):
             flavor = json.loads(res.body).get('flavor')
             if flavor:
                 body = {}
-                body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
-                body['id'] = concat(self.tenant_id,
-                                '/', self.entity_uri,
-                                '/', self.config_id)
+                body['resourceURI'] = '/'.join([self.uri_prefix,
+                                                self.entity_uri])
+                body['id'] = '/'.join([self.tenant_id, self.entity_uri,
+                                       self.config_id])
                 match_up(body, flavor, 'name', 'name')
                 match_up(body, flavor, 'cpu', 'vcpus')
                 match_up(body, flavor, 'memory', 'ram')
                 body['disks'] = []
-                body['disks'].append({'capacity': flavor.get('disk'),
-                                      'units': 'gb'})
+                body['disks'].append({'capacity':
+                                      int(flavor.get('disk')) * 1000 })
 
             if self.res_content_type == 'application/xml':
                 body.pop('resourceURI')
@@ -134,9 +134,8 @@ class MachineConfigColCtrler(Controller):
         if res.status_int == 200:
             content = json.loads(res.body)
             body = {}
-            body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
-            body['id'] = concat(self.tenant_id,
-                                '/', self.entity_uri)
+            body['resourceURI'] = '/'.join([self.uri_prefix, self.entity_uri])
+            body['id'] = '/'.join([self.tenant_id, self.entity_uri])
             body['machineConfigurations'] = []
             flavors = content.get('flavors',[])
             for flavor in flavors:

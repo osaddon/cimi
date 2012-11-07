@@ -20,7 +20,7 @@ import copy
 
 from cimibase import Controller
 from cimibase import make_response_data
-from cimiutils import concat, match_up
+from cimiutils import concat, match_up, map_status
 
 LOG = logging.getLogger(__name__)
 
@@ -50,7 +50,7 @@ class MachineImageCtrler(Controller):
         """
 
         env = self._fresh_env(req)
-        env['PATH_INFO'] = concat(self.os_path, '/', self.image_id)
+        env['PATH_INFO'] = '/'.join([self.os_path, self.image_id])
 
         new_req = Request(env)
         res = new_req.get_response(self.app)
@@ -58,18 +58,20 @@ class MachineImageCtrler(Controller):
             image = json.loads(res.body).get('image')
             if image:
                 body = {}
-                body['id'] = concat(self.tenant_id,
-                                '/', self.entity_uri,
-                                '/', self.image_id)
+                body['id'] = '/'.join([self.tenant_id, self.entity_uri,
+                                       self.image_id])
                 match_up(body, image, 'name', 'name')
                 match_up(body, image, 'created', 'created')
                 match_up(body, image, 'updated', 'updated')
+                match_up(body, image, 'state', 'status')
+                map_status(body, 'state')
                 body['imageLocation'] = body['id']
 
             if self.res_content_type == 'application/xml':
                 response_data = {self.entity_uri: body}
             else:
-                body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
+                body['resourceURI'] = '/'.join([self.uri_prefix,
+                                                self.entity_uri])
                 response_data = body
 
             new_content = make_response_data(response_data,
@@ -127,15 +129,14 @@ class MachineImageColCtrler(Controller):
         if res.status_int == 200:
             content = json.loads(res.body)
             body = {}
-            body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
-            body['id'] = concat(self.tenant_id,
-                                '/', self.entity_uri)
+            body['resourceURI'] = '/'.join([self.uri_prefix, self.entity_uri])
+            body['id'] = '/'.join([self.tenant_id, self.entity_uri])
             body['machineImages'] = []
             images = content.get('images',[])
             for image in images:
                 entry = {}
-                entry['resourceURI'] = concat(self.uri_prefix,
-                                              'MachineImage')
+                entry['resourceURI'] = '/'.join([self.uri_prefix,
+                                                 'MachineImage'])
                 entry['id'] = '/'.join([self.tenant_id,
                                      'MachineImage',
                                      image['id']])
