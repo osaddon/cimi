@@ -92,16 +92,18 @@ class MachineCtrler(Controller):
                 match_up(body, flavor, 'cpu', 'vcpus')
                 body['memory'] = int(flavor.get('ram')) * 1000
                 disks = []
-                disks.append({'capacity': int(flavor.get('disk')) * 1000000,
+                disks.append({'resourceURI':'/'.join([self.uri_prefix,
+                                                      'DiskCollection']),
+                              'capacity': int(flavor.get('disk')) * 1000000,
                               'format':''})
                 body['disks'] = disks
 
             # deal with machine operations
             operations = []
-            action_name = concat(self.uri_prefix, 'action/stop')
+            action_name = '/'.join([self.uri_prefix, 'action/stop'])
             action_url = '/'.join([self.tenant_id, 'machine', parts[0]])
             operations.append(self._create_op(action_name, action_url))
-            action_name = concat(self.uri_prefix, 'action/restart')
+            action_name = '/'.join([self.uri_prefix, 'action/restart'])
             operations.append(self._create_op(action_name, action_url))
             body['operations'] = operations
 

@@ -72,8 +72,8 @@ class CloudEntryPointCtrler(Controller):
         if self.res_content_type == 'application/xml':
             response_data = {'CloudEntryPoint': body}
         else:
-            body['resourceURI'] = concat(self.uri_prefix,
-                                   self.entity_uri)
+            body['resourceURI'] = '/'.join([self.uri_prefix,
+                                            self.entity_uri])
             response_data = body
 
         new_content = make_response_data(response_data,
