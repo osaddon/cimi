@@ -31,12 +31,16 @@ class CIMITestCase(unittest.TestCase):
             self.client.tenant_name = config.get('os_tenant_name')
             self._authenticate()
 
-            self.ns = 'http://schemas.dmtf.org/cimi/1/'
+            self.ns = 'http://schemas.dmtf.org/cimi/1'
             self.nsmap = {'ns':self.ns}
             self.host = config.get('api_url')
+            self.vol_host = config.get('vol_api_url')
             self.baseURI = self.host + '/cimiv1'
             self.image_id = self._prepare_id('images')
             self.flavor_id = self._prepare_id('flavors')
+            self.volume_id = self._prepare_id('volumes')
+            if not self.volume_id:
+                self._create_volume()
             self.server_id = self._prepare_id('servers')
             if not self.server_id:
                 self._create_machine()
@@ -86,7 +90,10 @@ class CIMITestCase(unittest.TestCase):
         self.tenant = resp_data['access']['token']['tenant']['id']
 
     def _prepare_id(self, key):
-        uri = '%s/v2/%s/%s' % (self.host, self.tenant, key)
+        if key == 'volumes':
+            uri = '%s/v1/%s/%s' % (self.vol_host, self.tenant, key)
+        else:
+            uri = '%s/v2/%s/%s' % (self.host, self.tenant, key)
         headers = {'X-Auth-Token': self.token,
                    'Accept': 'application/json'}
         res = self.client.request(uri, method='GET', headers=headers)
@@ -96,6 +103,29 @@ class CIMITestCase(unittest.TestCase):
             if len(all_items) > 0:
                 return all_items[0].get('id')
 
+    
+    def _create_volume(self):
+        body = '''
+            { "resourceURI": "http://schemas.dmtf.org/cimi/1/VolumeCreate",
+              "name": "init use",
+              "description": "My first new volume", 
+              "volumeTemplate": {
+                "volumeConfig": { "capacity": 1 }
+                }
+            }
+        '''
+        uri = '%s/%s/VolumeCollection' % (self.baseURI, self.tenant)
+        headers = {'X-Auth-Token': self.token,
+                   'Content-Type': 'application/json',
+                   'Accept': 'application/json'}
+        res = self.client.request(uri, method='POST', headers=headers,
+                                  body=body)
+        self.assertIn(res.status, [200, 201, 202], 'create volume json failed')
+        res_data = json.loads(res.read())
+        
+        tmp = res_data.get('id').strip('/').split('/')
+        self.volume_id = tmp[len(tmp)-1]
+        
     def _create_machine(self):
         body = '''
         {
@@ -123,7 +153,7 @@ class CIMITestCase(unittest.TestCase):
             res_data = json.loads(res.read())
             self.server_id = res_data.get('server').get('id')
             print ''
-            print 'Mahcine created'
+            print 'Machine created'
 
     def test_get_cloud_entry_point_xml(self):
         uri = '%s/%s/cloudentrypoint' % (self.baseURI, self.tenant)
@@ -222,7 +252,7 @@ class CIMITestCase(unittest.TestCase):
         root = json.loads(res.read())
         self.assertIsNotNone(root.get('id'), 'id should exist')
         self.assertEqual(root.get('resourceURI'),
-                         '%sMachineImageCollection' % (self.ns),
+                         '%s/MachineImageCollection' % (self.ns),
                          'resourceURI is not corret')
 
         entries = root.get('entries', [])
@@ -245,7 +275,7 @@ class CIMITestCase(unittest.TestCase):
         root = json.loads(res.read())
         self.assertIsNotNone(root.get('id'), 'id should exist')
         self.assertEqual(root.get('resourceURI'),
-                         '%sMachineImage' % (self.ns),
+                         '%s/MachineImage' % (self.ns),
                          'resourceURI is not corret')
 
     def test_get_machine_configurations_xml(self):
@@ -304,7 +334,7 @@ class CIMITestCase(unittest.TestCase):
         root = json.loads(res.read())
         self.assertIsNotNone(root.get('id'), 'id should exist')
         self.assertEqual(root.get('resourceURI'),
-                         '%sMachineConfigurationCollection' % (self.ns),
+                         '%s/MachineConfigurationCollection' % (self.ns),
                          'resourceURI is not corret')
 
         entries = root.get('entries', [])
@@ -328,7 +358,7 @@ class CIMITestCase(unittest.TestCase):
         root = json.loads(res.read())
         self.assertIsNotNone(root.get('id'), 'id should exist')
         self.assertEqual(root.get('resourceURI'),
-                         '%sMachineConfiguration' % (self.ns),
+                         '%s/MachineConfiguration' % (self.ns),
                          'resourceURI is not corret')
 
     def test_get_machines_xml(self):
@@ -384,7 +414,7 @@ class CIMITestCase(unittest.TestCase):
         root = json.loads(res.read())
         self.assertIsNotNone(root.get('id'), 'id should exist')
         self.assertEqual(root.get('resourceURI'),
-                         '%sMachineCollection' % (self.ns),
+                         '%s/MachineCollection' % (self.ns),
                          'resourceURI is not corret')
 
         entries = root.get('entries', [])
@@ -409,7 +439,7 @@ class CIMITestCase(unittest.TestCase):
         root = json.loads(res.read())
         self.assertIsNotNone(root.get('id'), 'id should exist')
         self.assertEqual(root.get('resourceURI'),
-                         '%sMachine' % (self.ns),
+                         '%s/Machine' % (self.ns),
                          'resourceURI is not corret')
 
     def test_invalid_controller(self):
@@ -425,7 +455,7 @@ class CIMITestCase(unittest.TestCase):
               <name>myMachineXML</name>
               <description>My very first XML machine</description>
               <machineTemplate>
-                  <machineConfig href="/cimiv1/%s/machineConfig/%s" />
+                  <machineConfig href="/cimiv1/%s/machineConfiguration/%s" />
                   <machineImage href="/cimiv1/%s/machineImage/%s" />
               </machineTemplate>
             </MachineCreate>
@@ -521,7 +551,7 @@ class CIMITestCase(unittest.TestCase):
                    'Accept': 'application/xml'}
         res = self.client.request(uri, method='POST', headers=headers,
                                   body=body)
-        self.assertIn(res.status, [200, 202, 204], 'stop machine failed')
+        self.assertIn(res.status, [200, 202, 204], 'restart machine failed')
 
     def test_restart_machine_json(self):
         body = '''
@@ -536,8 +566,300 @@ class CIMITestCase(unittest.TestCase):
                    'Accept': 'application/json'}
         res = self.client.request(uri, method='POST', headers=headers,
                                   body=body)
-        self.assertIn(res.status, [200, 202, 204], 'stop machine failed')
+        self.assertIn(res.status, [200, 202, 204], 'restart machine failed')
 
+    def test_create_volume_json(self):
+        body = '''
+            { "resourceURI": "http://schemas.dmtf.org/cimi/1/VolumeCreate",
+              "name": "myVolume1",
+              "description": "My first new volume", 
+              "volumeTemplate": {
+                "volumeConfig": { "capacity": 1 }
+                }
+            }
+        '''
+        uri = '%s/%s/VolumeCollection' % (self.baseURI, self.tenant)
+        headers = {'X-Auth-Token': self.token,
+                   'Content-Type': 'application/json',
+                   'Accept': 'application/json'}
+        res = self.client.request(uri, method='POST', headers=headers,
+                                  body=body)
+        self.assertIn(res.status, [200, 201, 202], 'create volume json failed')
 
+    def test_create_volume_xml(self):
+        """
+        This use case is NG
+        """
+        body = '''
+            <VolumeCreate xmlns="http://schemas.dmtf.org/cimi/1">
+              <name>myVolume1</name>
+              <description>My first new volume</description>
+              <volumeTemplate>
+                  <volumeConfig>
+                      <capacity>1</capacity>
+                  </volumeConfig>
+              </volumeTemplate>
+            </VolumeCreate>
+        '''
+        uri = '%s/%s/VolumeCollection' % (self.baseURI, self.tenant)
+        headers = {'X-Auth-Token': self.token,
+                   'Content-Type': 'application/xml',
+                   'Accept': 'application/xml'}
+        res = self.client.request(uri, method='POST', headers=headers,
+                                  body=body)
+        print res.status
+        self.assertIn(res.status, [200, 201, 202], 'create volume xml failed')
+        
+    def test_get_volumes_json(self):
+        uri = '%s/%s/volumeCollection' % (self.baseURI, self.tenant)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/json'}
+        res = self.client.request(uri, method='GET', headers=headers)
+        self.assertEqual(res.status, 200, 'Read volumes failed')
+        root = json.loads(res.read())
+        self.assertIsNotNone(root.get('id'), 'id should exist')
+        self.assertEqual(root.get('resourceURI'),
+                         '%s/VolumeCollection' % (self.ns),
+                         'resourceURI is not corret')
+
+        entries = root.get('volumes', [])
+        if len(entries) > 0:
+            entry = entries[0]
+            self.assertIsNotNone(entry.get('id'),
+                                 'id should be present')
+            
+            self.assertEqual(entry.get('resourceURI'),
+                            '%s/Volume' % (self.ns),
+                            'resourceURI is not corret')
+        return
+    
+    def test_get_volumes_xml(self):
+        uri = '%s/%s/volumeCollection' % (self.baseURI, self.tenant)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/xml'}
+        res = self.client.request(uri, method='GET', headers=headers)
+        self.assertEqual(res.status, 200, 'Read machines failed')
+        root = etree.fromstring(res.read())
+        self.assertIsInstance(root, etree._Element, 'returned is not a xml')
+        ns = ''.join(root.nsmap.values())
+        self.assertEqual(ns, self.ns, 'namespace is not correct')
+
+        els = root.xpath('/ns:Collection', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1, 'Root element should be Collection')
+        els = root.xpath('/ns:Collection/ns:id', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1, 'id should be present')
+
+        #test read machine
+        els = root.xpath('/ns:Collection/ns:Volume', namespaces=self.nsmap)
+        if len(els) > 0:
+            entry = els[0]
+            els = entry.xpath('./ns:id', namespaces=self.nsmap)
+            self.assertEqual(len(els), 1, 'id should be present')
+            els = entry.xpath('./ns:resourceURI', namespaces=self.nsmap)
+            self.assertEqual(len(els), 1, 'resourceURI should be present')
+    
+    def test_get_volume_json(self):
+        uri = '%s/%s/volume/%s' % (self.baseURI, self.tenant,
+            self.volume_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/json'}
+
+        res = self.client.request(uri, method='GET', headers=headers)
+        print res.status
+        self.assertEqual(res.status, 200,
+                         'Read volume failed')
+        root = json.loads(res.read())
+        self.assertIsNotNone(root.get('id'), 'id should exist')
+        self.assertEqual(root.get('resourceURI'),
+                         '%s/Volume' % (self.ns),
+                         'resourceURI is not corret')
+
+    def test_get_volume_xml(self):
+        uri = '%s/%s/volume/%s' % (self.baseURI, self.tenant,
+            self.volume_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/xml'}
+        res = self.client.request(uri, method='GET', headers=headers)
+        self.assertEqual(res.status, 200, 'Read volume xml failed')
+        root = etree.fromstring(res.read())
+        self.assertIsInstance(root, etree._Element,
+                              'returned is not a xml')
+        ns = ''.join(root.nsmap.values())
+        self.assertEqual(ns, self.ns, 'namespace is not correct')
+        els = root.xpath('/ns:Volume', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1,
+                         'Root element should be Volume')
+        els = root.xpath('./ns:id', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1, 'id should be present')
+        
+    #delete operation may be failed because the volume is creating but not available
+    def test_del_volume_json(self):
+        uri = '%s/%s/volume/%s' % (self.baseURI, self.tenant,
+            self.volume_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/json'}
+
+        res = self.client.request(uri, method='DELETE', headers=headers)
+        print res.status
+        self.assertEqual(res.status, [200, 201, 202],
+                         'delete volume json failed')
+
+    def test_del_volume_xml(self):
+        uri = '%s/%s/volume/%s' % (self.baseURI, self.tenant,
+            self.volume_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/xml'}
+
+        res = self.client.request(uri, method='DELETE', headers=headers)
+        
+        self.assertEqual(res.status, [200, 201, 202],
+                         'delete volume xml failed')
+    
+    def test_attach_volume_json(self):
+        body = '''
+            { "resourceURI": "http://schemas.dmtf.org/cimi/1/MachineVolume",
+              "initialLocation": "/dev/vdh",
+              "volume": { "href": "/cimiv1/%s/volume/%s" }
+            }
+        '''
+        
+        body = body % (self.tenant, self.volume_id)
+        
+        uri = '%s/%s/MachineVolumeCollection/%s' % (self.baseURI, self.tenant, self.server_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Content-Type': 'application/json',
+                   'Accept': 'application/json'}
+        res = self.client.request(uri, method='POST', headers=headers,
+                                  body=body)
+        print res.status
+        self.assertIn(res.status, [200, 201, 202], 'attach volume json failed')
+
+    def test_attach_volume_xml(self):
+        body = '''
+            <MachineVolume xmlns="http://schemas.dmtf.org/cimi/1">
+              <initialLocation>/dev/vdi</initialLocation>
+              <volume href="/cimiv1/%s/volume/%s" />
+            </MachineVolume>
+        '''
+        body = body % (self.tenant, self.volume_id)
+
+        uri = '%s/%s/MachineVolumeCollection/%s' % (self.baseURI, self.tenant, self.server_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Content-Type': 'application/xml',
+                   'Accept': 'application/xml'}
+        res = self.client.request(uri, method='POST', headers=headers,
+                                  body=body)
+        self.assertIn(res.status, [201, 202], 'attach volume xml failed')
+
+        root = etree.fromstring(res.read())
+        self.assertIsInstance(root, etree._Element,
+                              'returned is not a xml')
+        ns = ''.join(root.nsmap.values())
+        self.assertEqual(ns, self.ns, 'namespace is not correct')
+        els = root.xpath('/ns:MachineVolume', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1,
+                         'Root element should be MachineVolume')
+        els = root.xpath('./ns:id', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1, 'id should be present')
+    
+    
+    def test_get_machinevolumes_json(self):
+        uri = '%s/%s/MachineVolumeCollection/%s' % (self.baseURI, self.tenant, self.server_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/json'}
+        res = self.client.request(uri, method='GET', headers=headers)
+        self.assertEqual(res.status, 200, 'Read machine volumes json failed')
+        root = json.loads(res.read())
+        self.assertIsNotNone(root.get('id'), 'id should exist')
+        self.assertEqual(root.get('resourceURI'),
+                         '%s/MachineVolumeCollection' % (self.ns),
+                         'resourceURI is not corret')
+
+        entries = root.get('machineVolumes', [])
+        if len(entries) > 0:
+            entry = entries[0]
+            self.assertIsNotNone(entry.get('id'),
+                                 'id should be present')
+            
+            self.assertEqual(entry.get('resourceURI'),
+                            '%s/MachineVolume' % (self.ns),
+                            'resourceURI is not corret')
+        return
+    
+    def test_get_machinevolumes_xml(self):
+        uri = '%s/%s/MachineVolumeCollection/%s' % (self.baseURI, self.tenant, self.server_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/xml'}
+        res = self.client.request(uri, method='GET', headers=headers)
+        self.assertEqual(res.status, 200, 'Read machine volumes failed')
+        root = etree.fromstring(res.read())
+        self.assertIsInstance(root, etree._Element, 'returned is not a xml')
+        ns = ''.join(root.nsmap.values())
+        self.assertEqual(ns, self.ns, 'namespace is not correct')
+
+        els = root.xpath('/ns:Collection', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1, 'Root element should be Collection')
+        els = root.xpath('/ns:Collection/ns:id', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1, 'id should be present')
+
+        #test read machine
+        els = root.xpath('/ns:Collection/ns:MachineVolume', namespaces=self.nsmap)
+        if len(els) > 0:
+            entry = els[0]
+            els = entry.xpath('./ns:id', namespaces=self.nsmap)
+            self.assertEqual(len(els), 1, 'id should be present')
+            # in xml format, I delete the resourceURI
+            """
+            els = entry.xpath('./ns:resourceURI', namespaces=self.nsmap)
+            self.assertEqual(len(els), 1, 'resourceURI should be present')
+            """
+    def test_get_machinevolume_json(self):
+        uri = '%s/%s/MachineVolume/%s/%s' % (self.baseURI, self.tenant, self.server_id,self.volume_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/json'}
+        res = self.client.request(uri, method='GET', headers=headers)
+        self.assertEqual(res.status, 200, 'Read machine volume json failed')
+        root = json.loads(res.read())
+        self.assertIsNotNone(root.get('id'), 'id should exist')
+        self.assertEqual(root.get('resourceURI'),
+                         '%s/MachineVolume' % (self.ns),
+                         'resourceURI is not corret')
+    
+    def test_get_machinevolume_xml(self):
+        uri = '%s/%s/MachineVolume/%s/%s' % (self.baseURI, self.tenant,self.server_id, self.volume_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/xml'}
+        res = self.client.request(uri, method='GET', headers=headers)
+        self.assertEqual(res.status, 200, 'Read machine volume xml failed')
+        root = etree.fromstring(res.read())
+        self.assertIsInstance(root, etree._Element,
+                              'returned is not a xml')
+        ns = ''.join(root.nsmap.values())
+        self.assertEqual(ns, self.ns, 'namespace is not correct')
+        els = root.xpath('/ns:MachineVolume', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1,
+                         'Root element should be MachineVolume')
+        els = root.xpath('./ns:id', namespaces=self.nsmap)
+        self.assertEqual(len(els), 1, 'id should be present')
+    
+    def test_detach_machinevolume_json(self):
+        uri = '%s/%s/MachineVolume/%s/%s' % (self.baseURI, self.tenant,self.server_id,self.volume_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/json'}
+
+        res = self.client.request(uri, method='DELETE', headers=headers)
+        print res.status
+        self.assertEqual(res.status, 202,'delete machinevolume json failed')
+    
+    def test_detach_machinevolume_xml(self):
+        uri = '%s/%s/MachineVolume/%s/%s' % (self.baseURI, self.tenant,self.server_id,self.volume_id)
+        headers = {'X-Auth-Token': self.token,
+                   'Accept': 'application/xml'}
+
+        res = self.client.request(uri, method='DELETE', headers=headers)
+        print res.status
+        self.assertEqual(res.status, 202,'delete machinevolume xml failed')
+
+    
 suite = unittest.TestLoader().loadTestsFromTestCase(CIMITestCase)
 unittest.TextTestRunner(verbosity=2).run(suite)
