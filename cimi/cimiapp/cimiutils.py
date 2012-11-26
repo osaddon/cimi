@@ -140,6 +140,11 @@ def map_status(map, key):
     else:
         map[key] = 'ERROR'    
 
+def image_map_status(map, key):
+    if map.get(key) == 'ACTIVE' :
+        map[key] = 'AVAILABLE'
+    else:
+        map[key] = 'ERROR'
 
 def access_resource(env, method, path, get_body=False,
                     query_string=None, body=None):

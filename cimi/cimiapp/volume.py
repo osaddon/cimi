@@ -38,15 +38,9 @@ class VolumeCtrler(Controller):
                                             *args)
         self.os_path = '/%s/volumes/%s' % (tenant_id, args[0])
         self.entity_uri = 'Volume'
-        self.metadata = {'attributes': {'volume': 'href',
-                                        'Entry': 'resourceURI'},
-                         'plurals': {'entries': 'Entry'},
-                         'sequence': {'Volume':
-                                      ['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'state']}}
-        self.actions = {concat(self.uri_prefix, 'action/restart'): 'reboot',
-                        concat(self.uri_prefix, 'action/stop'): 'delete'}
+        self.metadata = Consts.VOLUME_METADATA
+        self.actions = {concat(self.uri_prefix, '/action/restart'): 'reboot',
+                        concat(self.uri_prefix, '/action/stop'): 'delete'}
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -74,7 +68,7 @@ class VolumeCtrler(Controller):
             match_up(body, data, 'description', 'display_description')
             match_up(body, data, 'created', 'created_at')
             match_up(body, data, 'capacity', 'size')
-            body['capacity'] = int(body['capacity']) * 1000
+            body['capacity'] = int(body['capacity']) * 1000 * 1000
             match_up(body, data, 'state', 'status')
 
 
@@ -96,7 +90,10 @@ class VolumeCtrler(Controller):
             resp.body = new_content
             return resp
         else:
-            return res
+            resp = Response()
+            resp.status = status_code
+            resp.body = 'Volume could not be found'
+            return resp
 
     def DELETE(self, req, *parts):
         """
@@ -230,8 +227,8 @@ class VolumeColCtrler(Controller):
                      self.conf.get('volume_endpoint_port'))
                 new_body_json = json.dumps({'volume': new_body})
                 env['CONTENT_LENGTH'] = len(new_body_json)
-
-                status, headers, body, status_cdoe = access_resource(env,
+                
+                status, headers, body, status_code = access_resource(env,
                     'POST', '/v1' + self.os_path, True, None, new_body_json)
 
                 if status:
@@ -251,7 +248,7 @@ class VolumeColCtrler(Controller):
                     if self.res_content_type == 'application/xml':
                         response_data = {'Volume': resp_data}
                     else:
-                        resp_data['resourceURI'] = ''.join([self.uri_prefix,
+                        resp_data['resourceURI'] = '/'.join([self.uri_prefix,
                                                             'Volume'])
                         response_data = resp_data
 

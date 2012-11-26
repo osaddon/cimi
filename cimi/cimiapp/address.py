@@ -20,7 +20,7 @@ import copy
 
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
-from cimibase import Controller
+from cimibase import Controller, Consts
 from cimibase import CimiXMLSerializer
 from cimibase import make_response_data
 from cimibase import get_request_data
@@ -42,12 +42,7 @@ class NetworkAddressCtrler(Controller):
         self.machine_id = args[0] if len(args) > 0 else ''
         self.address_key = args[1] if len(args) > 1 else ''
         self.machine_ip = args[2] if len(args) > 2 else ''
-        self.metadata = {'attributes': {'property': 'version'},
-                         'plurals': {'properties': 'property'},
-                         'sequence': {'Address':
-                                      ['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'ip', 'hostname']}}
+        self.metadata = Consts.ADDRESS_METADATA
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -108,14 +103,7 @@ class NetworkAddressColCtrler(Controller):
         self.machine_id = args[0] if len(args) > 0 else ''
         self.address_key = args[1] if len(args) > 1 else ''
         self.entity_uri = 'MachineNetworkInterfacesAddressesCollection'
-        self.metadata = {'attributes': {'Collection': 'resourceURI',
-                                       'Entry': 'resourceURI',
-                                       'addresses': 'href'},
-                         'plurals': {'entries': 'Entry'},
-                         'sequence': {'Collection':
-                                      ['id', 'entries'],
-                                      'entries':
-                                      ['id', 'address']}}
+        self.metadata = Consts.ADDRESS_COL_METADATA
 
     def _get_entry(self, data):
 
@@ -162,7 +150,7 @@ class NetworkAddressColCtrler(Controller):
                                 self.entity_uri, '/',
                                 self.machine_id, '/',
                                 self.address_key)
-            body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
+            body['resourceURI'] = concat(self.uri_prefix, '/', self.entity_uri)
             body['entries'] = self._get_entry(data)
 
             if self.res_content_type == 'application/xml':

@@ -18,7 +18,7 @@ from webob import Request, Response
 import json
 import copy
 
-from cimibase import Controller
+from cimibase import Controller, Consts
 from cimibase import CimiXMLSerializer
 from cimibase import make_response_data
 from cimibase import get_request_data
@@ -37,9 +37,7 @@ class NetworkInterfaceCtrler(Controller):
         super(NetworkInterfaceCtrler, self).__init__(conf, app, req,
                                 tenant_id, *args)
         self.os_path = '/%s/servers' % (tenant_id)
-        self.metadata = {'attributes': {'networkInterfaces': 'resourceURI',
-                                        'Entry': 'resourceURI'},
-                         'plurals': {'entries': 'Entry'}}
+        self.metadata = Consts.NETWORK_METADATA
 
 
 class NetworkInterfaceColCtrler(Controller):
@@ -51,14 +49,7 @@ class NetworkInterfaceColCtrler(Controller):
             app, req, tenant_id, *args)
         self.os_path = '/%s/servers' % (tenant_id)
         self.entity_uri = 'MachineNetworkInterfacesCollection'
-        self.metadata = {'attributes': {'Collection': 'resourceURI',
-                                       'Entry': 'resourceURI',
-                                       'addresses': 'href'},
-                         'plurals': {'entries': 'Entry'},
-                         'sequence': {self.entity_uri:
-                                      ['id', 'entries'],
-                                      'Entry':
-                                      ['id', 'addresses']}}
+        self.metadata = Consts.NETWORK_COL_METADATA
 
     def _get_entry(self, data, id):
 
@@ -101,7 +92,7 @@ class NetworkInterfaceColCtrler(Controller):
             body['id'] = concat(self.tenant_id,
                                 '/networkInterfacesCollection/',
                                 parts[0])
-            body['resourceURI'] = concat(self.uri_prefix, self.entity_uri)
+            body['resourceURI'] = concat(self.uri_prefix,'/', self.entity_uri)
             body['entries'] = self._get_entry(data, parts[0])
 
             if self.res_content_type == 'application/xml':

@@ -159,8 +159,112 @@ class Consts(object):
                                 'state', 'type', 'capacity',
                                 'bootable', 'images', 'meters',
                                 'eventLog', 'operations']}}
-
-
+    ADDRESS_METADATA = {'attributes': {'property': 'version'},
+                         'plurals': {'properties': 'property'},
+                         'sequence': {'Address':
+                                      ['id', 'name', 'description',
+                                       'created', 'updated', 'property',
+                                       'ip', 'hostname']}}
+    ADDRESS_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
+                                       'Entry': 'resourceURI',
+                                       'addresses': 'href'},
+                         'plurals': {'entries': 'Entry'},
+                         'sequence': {'Collection':
+                                      ['id', 'entries'],
+                                      'entries':
+                                      ['id', 'address']}}
+    CLOUDENTRYPOINT_METADATA = {'attributes': {'machineConfigs': 'href',
+                                        'machineImages': 'href',
+                                        'machines': 'href',
+                                        'volumes': 'href',
+                                        'CloudEntryPoint': 'resourceURI'},
+                         'sequence': {'CloudEntryPoint':
+                                      ['id', 'name', 'description',
+                                       'created', 'updated', 'property',
+                                       'baseURI', 'machines','machineConfigs',
+                                       'machineImages', 'volumes',
+                                       'operation']}}
+    MACHINE_METADATA = {'attributes': {'property': 'key',
+                                        'volumes': 'href',
+                                        'networkInterfaces': 'href',
+                                        'Entry': 'resourceURI',
+                                        'operation': ['rel', 'href']},
+                         'plurals': {'entries': 'Entry'},
+                         'sequence': {'Machine':
+                                      ['id', 'name', 'description',
+                                       'created', 'updated', 'property',
+                                       'state', 'cpu', 'memory', 'disks',
+                                       'networkInterfaces','credentials',
+                                       'operations']}}
+    MACHINE_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
+                                       'Entry': 'resourceURI',
+                                       'machine': 'href',
+                                       'operation': ['rel', 'href']},
+                         'plurals': {'machines': 'Machine',
+                                     'operations': 'operation'},
+                         'sequence': {'Collection':
+                                      ['id', 'count', 'machines',
+                                       'operation']}}
+    MACHINECONFIG_METADATA = {'attributes': {},
+                         'plurals': {'disks': 'disk'},
+                         'sequence': {'MachineConfiguration':
+                                      ['id', 'name', 'description', 'created',
+                                       'updated', 'property', 'cpu', 'memory',
+                                       'disks', 'operation'],
+                                      'disk': ['capacity']}}
+    MACHINECONFIG_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
+                                       'Entry': 'resourceURI',
+                                       'machineConfiguration': 'href'},
+                         'plurals': {'machineConfigurations':
+                                     'MachineConfiguration'},
+                         'sequence': {'Collection':
+                                      ['id', 'count',
+                                       'machineConfigurations']}}
+    
+    MACHINEIMAGE_METADATA = {'attributes': {'property': ['minRam', 'minDisk']},
+                         'plurals': {'properties':'property'},
+                         'sequence': {'MachineImage':
+                                      ['id', 'name', 'description',
+                                       'created', 'updated', 'property',
+                                       'state', 'type', 'imageLocation',
+                                       'operations']}}
+    MACHINEIMAGE_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
+                                       'Entry': 'resourceURI',
+                                       'machineImage': 'href'},
+                         'plurals': {'machineImages': 'MachineImage'},
+                         'sequence': {'Collection':
+                                      ['id', 'count', 'machineImages']}}
+    
+    MACHINEVOLUME_METADATA = {'attributes': {'volume': 'href',
+                                        'operation': ['rel', 'href']},
+                         'plurals': {},
+                         'sequence': {'MachineVolume':['id', 'name', 'description',
+                                       'created', 'updated', 'property',
+                                       'initialLocation','volume'
+                                       'operation']}}
+    
+    MACHINEVOLUME_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
+                                        'volume': 'href',
+                                        'operation': ['rel', 'href']},
+                         'plurals': {'machineVolumes': 'MachineVolume',
+                                     'operations': 'operation'},
+                         'sequence': {'Collection':
+                                      ['id', 'count', 'machineVolumes',
+                                       'operation']}}
+    
+    NETWORK_METADATA = {'attributes': {'networkInterfaces': 'resourceURI',
+                                        'Entry': 'resourceURI'},
+                         'plurals': {'entries': 'Entry'}}
+    
+    NETWORK_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
+                                       'Entry': 'resourceURI',
+                                       'addresses': 'href'},
+                         'plurals': {'entries': 'Entry'},
+                         'sequence': {'MachineNetworkInterfacesCollection':
+                                      ['id', 'entries'],
+                                      'Entry':
+                                      ['id', 'addresses']}}
+    
 class Controller(object):
     def __init__(self, conf, app, req, tenant_id, *args):
         self.conf = conf

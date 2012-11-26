@@ -18,7 +18,7 @@ from webob import Request, Response
 import json
 import copy
 
-from cimibase import Controller
+from cimibase import Controller, Consts
 from cimibase import CimiXMLSerializer
 from cimibase import make_response_data
 from cimibase import get_request_data
@@ -39,20 +39,9 @@ class MachineCtrler(Controller):
                                             *args)
         self.os_path = '/%s/servers' % (tenant_id)
         self.entity_uri = 'Machine'
-        self.metadata = {'attributes': {'property': 'key',
-                                        'volumes': 'href',
-                                        'networkInterfaces': 'href',
-                                        'Entry': 'resourceURI',
-                                        'operation': ['rel', 'href']},
-                         'plurals': {'entries': 'Entry'},
-                         'sequence': {'Machine':
-                                      ['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'state', 'cpu', 'memory', 'disks',
-                                       'networkInterfaces',
-                                       'operations']}}
-        self.actions = {concat(self.uri_prefix, 'action/restart'): 'reboot',
-                        concat(self.uri_prefix, 'action/stop'): 'delete'}
+        self.metadata = Consts.MACHINE_METADATA
+        self.actions = {concat(self.uri_prefix, '/action/restart'): 'reboot',
+                        concat(self.uri_prefix, '/action/stop'): 'delete'}
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -81,6 +70,8 @@ class MachineCtrler(Controller):
             body['networkInterfaces'] = {'href': concat(self.tenant_id,
                     '/networkInterfacesCollection/', parts[0])}
 
+            body['volumes'] = {'href': concat(self.tenant_id,'/MachineVolumeCollection/',
+                                              parts[0])}
             # Send a request to get the details on flavor
             env = self._fresh_env(req)
             env['PATH_INFO'] = '/%s/flavors/%s' % (self.tenant_id, 
@@ -189,25 +180,9 @@ class MachineColCtrler(Controller):
                                                      *args)
         self.os_path = '/%s/servers' % (tenant_id)
         self.entity_uri = 'MachineCollection'
-        self.metadata = {'attributes': {'Collection': 'resourceURI',
-                                       'Entry': 'resourceURI',
-                                       'machine': 'href',
-                                       'operation': ['rel', 'href']},
-                         'plurals': {'machines': 'Machine',
-                                     'operations': 'operation'},
-                         'sequence': {'Collection':
-                                      ['id', 'count', 'machines',
-                                       'operation']}}
+        self.metadata = Consts.MACHINE_COL_METADATA
 
-        self.machine_metadata = {'attributes':
-            {'property': 'key', 'volumes': 'href',
-             'networkInterfaces': 'href', 'operation': ['rel', 'href']},
-            'plurals': {'entries': 'Entry'},
-            'sequence': {'Machine': ['id', 'name', 'description',
-                                     'created', 'updated', 'property',
-                                     'state', 'cpu', 'memory', 'disks',
-                                     'networkInterfaces', 'credentials',
-                                     'operations']}}
+        self.machine_metadata = Consts.MACHINE_METADATA
 
 
     # Use GET to handle all container read related operations.
