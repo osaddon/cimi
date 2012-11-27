@@ -23,7 +23,7 @@ from cimibase import CimiXMLSerializer
 from cimibase import make_response_data
 from cimibase import get_request_data
 from cimiutils import concat, get_err_response
-from cimiutils import match_up, sub_path
+from cimiutils import match_up, sub_path, access_resource
 from cimiutils import map_status
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
@@ -40,8 +40,7 @@ class MachineCtrler(Controller):
         self.os_path = '/%s/servers' % (tenant_id)
         self.entity_uri = 'Machine'
         self.metadata = Consts.MACHINE_METADATA
-        self.actions = {concat(self.uri_prefix, '/action/restart'): 'reboot',
-                        concat(self.uri_prefix, '/action/stop'): 'delete'}
+        self.actions = Consts.MACHINE_ACTIONS
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -59,7 +58,7 @@ class MachineCtrler(Controller):
             data = json.loads(res.body).get('server')
 
             body = {}
-            body['id'] = concat(self.tenant_id, '/machine/',
+            body['id'] = concat(self.tenant_id, '/Machine/',
                                 parts[0])
             match_up(body, data, 'name', 'name')
             match_up(body, data, 'created', 'created')
@@ -67,12 +66,15 @@ class MachineCtrler(Controller):
             match_up(body, data, 'state', 'status')
             map_status(body, 'state')
 
-            body['networkInterfaces'] = {'href': concat(self.tenant_id,
-                    '/networkInterfacesCollection/', parts[0])}
+            body['networkInterfaces'] = {'href': '/'.join([self.tenant_id,
+                'NetworkInterfacesCollection', parts[0]])}
 
-            body['volumes'] = {'href': concat(self.tenant_id,
-                                              '/MachineVolumeCollection/',
-                                              parts[0])}
+            body['volumes'] = {'href': '/'.join([self.tenant_id,
+                'MachineVolumeCollection', parts[0]])}
+            body['disks'] = {'href': '/'.join([self.tenant_id,
+                'MachineDiskCollection', parts[0]])}
+
+
             # Send a request to get the details on flavor
             env = self._fresh_env(req)
             env['PATH_INFO'] = '/%s/flavors/%s' % (self.tenant_id,
@@ -83,20 +85,29 @@ class MachineCtrler(Controller):
                 flavor = json.loads(res.body).get('flavor')
                 match_up(body, flavor, 'cpu', 'vcpus')
                 body['memory'] = int(flavor.get('ram')) * 1000
-                disks = []
-                disks.append({'resourceURI': '/'.join([self.uri_prefix,
-                                                      'DiskCollection']),
-                              'capacity': int(flavor.get('disk')) * 1000000,
-                              'format': ''})
-                body['disks'] = disks
 
             # deal with machine operations
             operations = []
-            action_name = '/'.join([self.uri_prefix, 'action/stop'])
-            action_url = '/'.join([self.tenant_id, 'machine', parts[0]])
+            action_url = '/'.join([self.tenant_id, 'Machine', parts[0]])
+
+            action_name = '/'.join([self.uri_prefix, 'action/start'])
             operations.append(self._create_op(action_name, action_url))
+
+            action_name = '/'.join([self.uri_prefix, 'action/stop'])
+            operations.append(self._create_op(action_name, action_url))
+
             action_name = '/'.join([self.uri_prefix, 'action/restart'])
             operations.append(self._create_op(action_name, action_url))
+
+            action_name = '/'.join([self.uri_prefix, 'action/pause'])
+            operations.append(self._create_op(action_name, action_url))
+
+            action_name = '/'.join([self.uri_prefix, 'action/suspend'])
+            operations.append(self._create_op(action_name, action_url))
+
+            action_name = 'delete'
+            operations.append(self._create_op(action_name, action_url))
+
             body['operations'] = operations
 
             if self.res_content_type == 'application/xml':
@@ -119,28 +130,21 @@ class MachineCtrler(Controller):
         else:
             return res
 
-    def _delete(self, req, request_data, *parts):
-        """
-        Handle the stop machine request
-        """
-        env = self._fresh_env(req)
-        env['PATH_INFO'] = concat(self.os_path, '/', parts[0])
-        env['REQUEST_METHOD'] = 'DELETE'
-        new_req = Request(env)
-        res = new_req.get_response(self.app)
-        return res
-
-    def _reboot(self, req, request_data, *parts):
+    def _run_method(self, req, request_data, method, *parts):
         """
         Handle the machine reboot request
         """
         data = {}
-        force = request_data.get('force', False)
-        if isinstance(force, str):
-            force = 'HARD' if force.lower() == 'true' else 'SOFT'
+        if method == 'reboot':
+            force = request_data.get('force', False)
+            if isinstance(force, str):
+                force = 'HARD' if force.lower() == 'true' else 'SOFT'
+            else:
+                force = 'HARD' if force else 'SOFT'
+            data['reboot'] = {'type': force}
         else:
-            force = 'HARD' if force else 'SOFT'
-        data['reboot'] = {'type': force}
+            data[method] = None
+
         env = self._fresh_env(req)
         env['PATH_INFO'] = concat(self.os_path, '/', parts[0], '/action')
         env['CONTENT_TYPE'] = 'application/json'
@@ -163,13 +167,42 @@ class MachineCtrler(Controller):
         if request_data.get('Action'):
             request_data = request_data.get('Action')
         action = request_data.get('action', 'notexist')
-        method = self.actions.get(action)
-        if method:
-            resp = getattr(self, '_' + method)(req, request_data, *parts)
-        else:
-            resp = get_err_response('NotImplemented')
+        resp = None
+        if action in Consts.MACHINE_ACTIONS:
+            # Need to get the current machine state
+            env = self._fresh_env(req)
+            env['SCRIPT_NAME'] = '/v2'
+            env['CONTENT_LENGTH'] = 0
 
-        return resp
+            action = action.split('/')[-1]
+            access_path = '/'.join(['/v2', self.tenant_id, 'servers',
+                                    parts[0]])
+            status, headers, body, status_code = access_resource(env, 'GET',
+                access_path, True, None, None)
+            if status:
+                body = json.loads(body)
+                key = ''.join([body['server']['status'].lower(), '_', action])
+                method = Consts.MACHINE_ACTION_MAPS.get(key)
+                if method:
+                    resp = self._run_method(req, request_data, method, *parts)
+            else:
+                resp = get_err_response('NotFound')
+
+        if resp:
+            return resp
+        else:
+            return get_err_response('NotImplemented')
+
+    def DELETE(self, req, *parts):
+        """
+        Handle Machine delete
+        """
+        env = self._fresh_env(req)
+        env['PATH_INFO'] = concat(self.os_path, '/', parts[0])
+        env['REQUEST_METHOD'] = 'DELETE'
+        new_req = Request(env)
+        res = new_req.get_response(self.app)
+        return res
 
 
 class MachineColCtrler(Controller):

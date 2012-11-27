@@ -39,6 +39,8 @@ def get_err_response(code):
             (400, 'Bad request'),
         'MalformedBody':
             (400, 'Request body can not be parsed, malformed request body'),
+        'NotFound':
+            (404, 'Resource was not found'),
         'NotImplemented':
             (501, 'Not implemented'),
         'TestRequest':

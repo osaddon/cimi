@@ -144,6 +144,7 @@ class Consts(object):
     REQUEST_PREFIX_LENGTH = len(REQUEST_PREFIX)
     RESPONSE_VERSION_KEY = 'CIMI-Specification-Version'
     RESPONSE_VERSION_VALUE = '1.0.0'
+    CIMI_NS = 'http://schemas.dmtf.org/cimi/1'
     VOLUME_COL_METADATA = {'attributes':
         {'Collection': 'resourceURI', 'Entry': 'resourceURI',
          'volume': 'href'},
@@ -187,6 +188,7 @@ class Consts(object):
                                        'operation']}}
     MACHINE_METADATA = {'attributes': {'property': 'key',
                                         'volumes': 'href',
+                                        'disks': 'href',
                                         'networkInterfaces': 'href',
                                         'Entry': 'resourceURI',
                                         'operation': ['rel', 'href']},
@@ -266,6 +268,25 @@ class Consts(object):
                                       'Entry':
                                       ['id', 'addresses']}}
 
+    MACHINE_ACTIONS = [CIMI_NS + '/action/start',
+                       CIMI_NS + '/action/restart',
+                       CIMI_NS + '/action/pause',
+                       CIMI_NS + '/action/suspend']
+
+    # use the OS machine status and the cimi action to make a key, then
+    # the value will be the action used to be sent to Nova.
+    MACHINE_ACTION_MAPS = {'paused_start': 'unpause',
+                           'paused_restart': 'unpause',
+                           'suspended_start': 'resume',
+                           'suspended_restart': 'resume',
+                           'shutoff_start': 'os-start',
+                           'shutoff_restart': 'os-start',
+                           'active_restart': 'reboot',
+                           'active_pause': 'pause',
+                           'active_suspend': 'suspend',
+                           'active_stop': 'os-stop',
+                           'active_delete': 'delete'}
+
 
 class Controller(object):
     def __init__(self, conf, app, req, tenant_id, *args):
@@ -274,7 +295,7 @@ class Controller(object):
         self.tenant_id = tenant_id
         self.request_prefix = self.conf.get('request_prefix')
         self.os_version = self.conf.get('os_version')
-        self.uri_prefix = 'http://schemas.dmtf.org/cimi/1'
+        self.uri_prefix = Consts.CIMI_NS
         self.res_content_type = best_match(req.environ.get('HTTP_ACCEPT', ''))
         self.req_content_type = best_match(req.environ.get('CONTENT_TYPE', ''))
 
