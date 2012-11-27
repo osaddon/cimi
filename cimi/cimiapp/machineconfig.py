@@ -18,7 +18,7 @@ from webob import Request, Response
 import json
 import copy
 
-from cimibase import Controller
+from cimibase import Controller, Consts
 from cimibase import make_response_data
 from cimiutils import concat, match_up
 
@@ -35,14 +35,7 @@ class MachineConfigCtrler(Controller):
         self.os_path = '/%s/flavors' % (tenant_id)
         self.config_id = args[0] if len(args) > 0 else ''
         self.entity_uri = 'MachineConfiguration'
-        self.metadata = {'attributes': {},
-                         'plurals': {'disks': 'disk'},
-                         'sequence': {self.entity_uri:
-                                      ['id', 'name', 'description', 'created',
-                                       'updated', 'property', 'cpu', 'memory',
-                                       'disks', 'operation'],
-                                      'disk': ['capacity']}}
-
+        self.metadata = Consts.MACHINECONFIG_METADATA
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -69,7 +62,7 @@ class MachineConfigCtrler(Controller):
                 match_up(body, flavor, 'memory', 'ram')
                 body['disks'] = []
                 body['disks'].append({'capacity':
-                                      int(flavor.get('disk')) * 1000 })
+                                      int(flavor.get('disk')) * 1000})
 
             if self.res_content_type == 'application/xml':
                 body.pop('resourceURI')
@@ -102,14 +95,8 @@ class MachineConfigColCtrler(Controller):
                                                      *args)
         self.os_path = '/%s/flavors' % (tenant_id)
         self.entity_uri = 'MachineConfigurationCollection'
-        self.metadata = {'attributes': {'Collection': 'resourceURI',
-                                       'Entry': 'resourceURI',
-                                       'machineConfiguration': 'href'},
-                         'plurals': {'machineConfigurations':
-                                     'MachineConfiguration'},
-                         'sequence': {'Collection':
-                                      ['id', 'count',
-                                       'machineConfigurations']}}
+
+        self.metadata = Consts.MACHINECONFIG_COL_METADATA
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -137,7 +124,7 @@ class MachineConfigColCtrler(Controller):
             body['resourceURI'] = '/'.join([self.uri_prefix, self.entity_uri])
             body['id'] = '/'.join([self.tenant_id, self.entity_uri])
             body['machineConfigurations'] = []
-            flavors = content.get('flavors',[])
+            flavors = content.get('flavors', [])
             for flavor in flavors:
                 entry = {}
                 entry['resourceURI'] = '/'.join([self.uri_prefix,

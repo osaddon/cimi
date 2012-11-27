@@ -18,9 +18,9 @@ from webob import Request, Response
 import json
 import copy
 
-from cimibase import Controller
+from cimibase import Controller, Consts
 from cimibase import make_response_data
-from cimiutils import concat, match_up, map_status
+from cimiutils import concat, match_up, image_map_status
 
 LOG = logging.getLogger(__name__)
 
@@ -35,13 +35,7 @@ class MachineImageCtrler(Controller):
         self.os_path = '/%s/images' % (tenant_id)
         self.image_id = args[0] if len(args) > 0 else ''
         self.entity_uri = 'MachineImage'
-        self.metadata = {'attributes': {'property': ['minRam', 'minDisk']},
-                         'plurals': {'properties':'property'},
-                         'sequence': {self.entity_uri:
-                                      ['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'state', 'type', 'imageLocation',
-                                       'operations']}}
+        self.metadata = Consts.MACHINEIMAGE_METADATA
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -64,7 +58,7 @@ class MachineImageCtrler(Controller):
                 match_up(body, image, 'created', 'created')
                 match_up(body, image, 'updated', 'updated')
                 match_up(body, image, 'state', 'status')
-                map_status(body, 'state')
+                image_map_status(body, 'state')
                 body['imageLocation'] = body['id']
 
             if self.res_content_type == 'application/xml':
@@ -99,12 +93,7 @@ class MachineImageColCtrler(Controller):
                                                     *args)
         self.os_path = '/%s/images' % (tenant_id)
         self.entity_uri = 'MachineImageCollection'
-        self.metadata = {'attributes': {'Collection': 'resourceURI',
-                                       'Entry': 'resourceURI',
-                                       'machineImage': 'href'},
-                         'plurals': {'machineImages': 'MachineImage'},
-                         'sequence': {'Collection':
-                                      ['id', 'count', 'machineImages']}}
+        self.metadata = Consts.MACHINEIMAGE_COL_METADATA
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -132,7 +121,7 @@ class MachineImageColCtrler(Controller):
             body['resourceURI'] = '/'.join([self.uri_prefix, self.entity_uri])
             body['id'] = '/'.join([self.tenant_id, self.entity_uri])
             body['machineImages'] = []
-            images = content.get('images',[])
+            images = content.get('images', [])
             for image in images:
                 entry = {}
                 entry['resourceURI'] = '/'.join([self.uri_prefix,

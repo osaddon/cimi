@@ -18,7 +18,7 @@ from webob import Request, Response
 import json
 import copy
 
-from cimibase import Controller
+from cimibase import Controller, Consts
 from cimibase import make_response_data
 from cimiutils import concat
 
@@ -33,17 +33,7 @@ class CloudEntryPointCtrler(Controller):
         super(CloudEntryPointCtrler, self).__init__(conf, app, req,
                                                     tenant_id, *args)
         self.entity_uri = 'CloudEntryPoint'
-        self.metadata = {'attributes': {'machineConfigs': 'href',
-                                        'machineImages': 'href',
-                                        'machines': 'href',
-                                        'volumes': 'href',
-                                        'CloudEntryPoint': 'resourceURI'},
-                         'sequence': {self.entity_uri:
-                                      ['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'baseURI', 'machines','machineConfigs',
-                                       'machineImages', 'volumes',
-                                       'operation']}}
+        self.metadata = Consts.CLOUDENTRYPOINT_METADATA
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
