@@ -71,7 +71,6 @@ class VolumeCtrler(Controller):
             body['capacity'] = int(body['capacity']) * 1000 * 1000
             match_up(body, data, 'state', 'status')
 
-
             if self.res_content_type == 'application/xml':
                 response_data = {'Volume': body}
             else:
@@ -136,7 +135,7 @@ class VolumeColCtrler(Controller):
         env = self._fresh_env(req)
         env['SERVER_PORT'] = self.conf.get('volume_endpoint_port')
         env['SCRIPT_NAME'] = '/v1'
-        env['HTTP_HOST'] = '%s:%s'%(self.conf.get('volume_endpoint_host'),
+        env['HTTP_HOST'] = '%s:%s' % (self.conf.get('volume_endpoint_host'),
                                     self.conf.get('volume_endpoint_port'))
 
         status, headers, body, status_code = access_resource(env, 'GET',
@@ -227,7 +226,7 @@ class VolumeColCtrler(Controller):
                      self.conf.get('volume_endpoint_port'))
                 new_body_json = json.dumps({'volume': new_body})
                 env['CONTENT_LENGTH'] = len(new_body_json)
-                
+
                 status, headers, body, status_code = access_resource(env,
                     'POST', '/v1' + self.os_path, True, None, new_body_json)
 

@@ -34,7 +34,7 @@ from cimiapp.cloudentrypoint import CloudEntryPointCtrler
 from cimiapp.address import (NetworkAddressCtrler,
                                       NetworkAddressColCtrler)
 from cimiapp.volume import VolumeColCtrler, VolumeCtrler
-from cimiapp.machinevolume import (MachineVolumeCtrler, 
+from cimiapp.machinevolume import (MachineVolumeCtrler,
                                             MachineVolumeColCtrler)
 
 from cimiapp.cimiutils import get_err_response
@@ -42,6 +42,7 @@ from cimiapp.cimiutils import get_err_response
 LOG = logging.getLogger(__name__)
 
 LOCK = threading.Lock()
+
 
 class CIMIMiddleware(object):
     """CIMI Middleware"""
@@ -61,7 +62,7 @@ class CIMIMiddleware(object):
                    'volumecollection': VolumeColCtrler,
                    'volume': VolumeCtrler,
                    'machinevolume': MachineVolumeCtrler,
-                   'machinevolumecollection':MachineVolumeColCtrler}
+                   'machinevolumecollection': MachineVolumeColCtrler}
 
     def __init__(self, app, conf, *args, **kwargs):
         self.app = app

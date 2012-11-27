@@ -40,19 +40,17 @@ class MachineVolumeCtrler(Controller):
         self.entity_uri = 'MachineVolume'
 
         self.metadata = Consts.MACHINEVOLUME_METADATA
-        
+
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
         """
         Handle GET Container (List Objects) request
         """
-        
-        if len(parts) < 2:
-            return get_err_response('BadRequest')
-        
+
         env = self._fresh_env(req)
-        env['PATH_INFO'] = concat(self.os_path,'/',
-                                  parts[0],'/os-volume_attachments/', parts[1])
+        env['PATH_INFO'] = concat(self.os_path, '/',
+                                  parts[0], '/os-volume_attachments/',
+                                  parts[1])
         new_req = Request(env)
         res = new_req.get_response(self.app)
 
@@ -61,7 +59,7 @@ class MachineVolumeCtrler(Controller):
 
             body = {}
             body['id'] = concat(self.tenant_id, '/MachineVolume/',
-                                data['serverId'],'/',data['id'])
+                                data['serverId'], '/', data['id'])
             match_up(body, data, 'initialLocation', 'device')
 
             body['volume'] = {'href': concat(self.tenant_id,
@@ -76,7 +74,8 @@ class MachineVolumeCtrler(Controller):
             if self.res_content_type == 'application/xml':
                 response_data = {'MachineVolume': body}
             else:
-                body['resourceURI'] = concat(self.uri_prefix,'/', self.entity_uri)
+                body['resourceURI'] = concat(self.uri_prefix, '/',
+                                      self.entity_uri)
                 response_data = body
 
             new_content = make_response_data(response_data,
@@ -91,24 +90,25 @@ class MachineVolumeCtrler(Controller):
             return resp
         else:
             return res
-        
 
     def DELETE(self, req, *parts):
         """
         handle volume detach operation
         """
         #parts is /server_id/attach_id
-        
+
         if len(parts) < 2:
             return get_err_response('BadRequest')
-        
+
         env = self._fresh_env(req)
-        env['PATH_INFO'] = concat(self.os_path, '/', parts[0], '/os-volume_attachments/', parts[1])
+        env['PATH_INFO'] = concat(self.os_path, '/', parts[0],
+                                  '/os-volume_attachments/', parts[1])
         env['CONTENT_TYPE'] = 'application/json'
         new_req = Request(env)
         res = new_req.get_response(self.app)
-        
+
         return res
+
 
 class MachineVolumeColCtrler(Controller):
     """
@@ -119,38 +119,33 @@ class MachineVolumeColCtrler(Controller):
                                                      *args)
         self.os_path = '/%s/servers' % (tenant_id)
         self.entity_uri = 'MachineVolumeCollection'
-        
+
         self.metadata = Consts.MACHINEVOLUME_COL_METADATA
         self.machine_volume_metadata = Consts.MACHINEVOLUME_METADATA
+
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
         """
-        Handle GET machinevolumeCollection request
+        Handle GET machineVolumeCollection request
         """
-        LOG.info("machineVolume collection GET entering...")
-        
-        if len(parts) == 0:
-            return get_err_response('BadRequest')
-        
+
         env = self._fresh_env(req)
-        
-        env['PATH_INFO'] = concat(self.os_path,'/',
-                                  parts[0],'/os-volume_attachments')
-        LOG.info(env['PATH_INFO'])
+
+        env['PATH_INFO'] = concat(self.os_path, '/',
+                                  parts[0], '/os-volume_attachments')
         new_req = Request(env)
         res = new_req.get_response(self.app)
-        LOG.info(res.status_int)
-        
+
         if res.status_int == 200:
             content = json.loads(res.body)
             body = {}
             body['id'] = concat(self.tenant_id,
-                                '/', self.entity_uri,'/', parts[0])
-            body['resourceURI'] = concat(self.uri_prefix,'/',
+                                '/', self.entity_uri, '/', parts[0])
+            body['resourceURI'] = concat(self.uri_prefix, '/',
                                             self.entity_uri)
 
             body['machineVolumes'] = []
-            volumeAttachments = content.get('volumeAttachments',[])
+            volumeAttachments = content.get('volumeAttachments', [])
             for data in volumeAttachments:
                 entry = {}
                 if self.res_content_type == 'application/json':
@@ -158,17 +153,17 @@ class MachineVolumeColCtrler(Controller):
                                             '/MachineVolume')
                 entry['id'] = concat(self.tenant_id, '/',
                                      'machineVolume/',
-                                     data['serverId'],'/',
+                                     data['serverId'], '/',
                                      data['id'])
                 entry['initialLocation'] = data['device']
                 entry['volume'] = {'href': concat(self.tenant_id,
                     '/Volume/', data['volumeId'])}
-                
+
                 operations = []
                 operations.append(self._create_op('edit', entry['id']))
                 operations.append(self._create_op('delete', entry['id']))
                 entry['operations'] = operations
-                
+
                 body['machineVolumes'].append(entry)
 
             body['count'] = len(body['machineVolumes'])
@@ -196,14 +191,11 @@ class MachineVolumeColCtrler(Controller):
         else:
             return res
 
-    # Use GET to handle all container read related operations.
+    # Use POST to handle all container read related operations.
     def POST(self, req, *parts):
         """
-        Handle POST machinevolumeCollection request which will attach an volume
+        Handle POST machineVolumeCollection request which will attach an volume
         """
-        if len(parts) == 0:
-            return get_err_response('BadRequest')
-        
         try:
             request_data = get_request_data(req.body, self.req_content_type)
         except Exception as error:
@@ -214,23 +206,24 @@ class MachineVolumeColCtrler(Controller):
             if not data:
                 data = request_data.get('body')
             if data:
-                
-                volume_url = data.get('volume',{}).get('href')
+
+                volume_url = data.get('volume', {}).get('href')
                 if volume_url:
                     tmp = volume_url.strip('/').split('/')
-                    volume_id = tmp[len(tmp)-1]
+                    volume_id = tmp[len(tmp) - 1]
                 else:
                     return get_err_response('MalformedBody')
-        
+
                 device = data.get('initialLocation')
                 if not device:
                     return get_err_response('MalformedBody')
-                
-                reqdata = {} 
-                reqdata['volumeAttachment'] = {'volumeId':volume_id,
-                                            'device':device}
+
+                reqdata = {}
+                reqdata['volumeAttachment'] = {'volumeId': volume_id,
+                                            'device': device}
                 env = self._fresh_env(req)
-                env['PATH_INFO'] = concat(self.os_path, '/', parts[0], '/os-volume_attachments')
+                env['PATH_INFO'] = concat(self.os_path, '/', parts[0],
+                                          '/os-volume_attachments')
                 env['CONTENT_TYPE'] = 'application/json'
                 new_req = Request(env)
                 new_req.body = json.dumps(reqdata)
@@ -240,32 +233,34 @@ class MachineVolumeColCtrler(Controller):
                     attach_id = data.get('id')
                     server_id = data.get('serverId')
                     volume_id = data.get('volumeId')
-                    
+
                     body = {}
                     match_up(body, data, 'initialLocation', 'device')
-                    
-                    body['id'] = concat(self.tenant_id, '/machinevolume/',server_id,'/',
-                                        attach_id)
-            
-                    body['volume'] = {'href':concat(self.tenant_id,'/volume/',volume_id)}
-                    
+
+                    body['id'] = concat(self.tenant_id, '/machinevolume/',
+                                        server_id, '/', attach_id)
+
+                    body['volume'] = {'href': concat(self.tenant_id,
+                                                    '/volume/', volume_id)}
+
                     # deal with volume attach operations
                     operations = []
                     operations.append(self._create_op('edit', body['id']))
-                    
+
                     operations.append(self._create_op('delete', body['id']))
                     body['operations'] = operations
-            
+
                     if self.res_content_type == 'application/xml':
                         response_data = {'MachineVolume': body}
                     else:
-                        body['resourceURI'] = concat(self.uri_prefix, '/MachineVolume')
+                        body['resourceURI'] = concat(self.uri_prefix,
+                                                    '/MachineVolume')
                         response_data = body
-            
+
                     new_content = make_response_data(response_data,
-                                                     self.res_content_type,
-                                                     self.machine_volume_metadata,
-                                                     self.uri_prefix)
+                                                 self.res_content_type,
+                                                 self.machine_volume_metadata,
+                                                 self.uri_prefix)
                     resp = Response()
                     self._fixup_cimi_header(resp)
                     resp.headers['Content-Type'] = self.res_content_type
@@ -274,7 +269,7 @@ class MachineVolumeColCtrler(Controller):
                     return resp
                 else:
                     return res
-                
+
             else:
                 return get_err_response('BadRequest')
         else:

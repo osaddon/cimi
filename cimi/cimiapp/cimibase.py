@@ -24,6 +24,7 @@ import json
 
 LOG = logging.getLogger(__name__)
 
+
 class CimiJSONDictSerializer(JSONDictSerializer):
     """Default JSON request body serialization"""
 
@@ -181,7 +182,7 @@ class Consts(object):
                          'sequence': {'CloudEntryPoint':
                                       ['id', 'name', 'description',
                                        'created', 'updated', 'property',
-                                       'baseURI', 'machines','machineConfigs',
+                                       'baseURI', 'machines', 'machineConfigs',
                                        'machineImages', 'volumes',
                                        'operation']}}
     MACHINE_METADATA = {'attributes': {'property': 'key',
@@ -194,7 +195,7 @@ class Consts(object):
                                       ['id', 'name', 'description',
                                        'created', 'updated', 'property',
                                        'state', 'cpu', 'memory', 'disks',
-                                       'networkInterfaces','credentials',
+                                       'networkInterfaces', 'credentials',
                                        'operations']}}
     MACHINE_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
                                        'Entry': 'resourceURI',
@@ -220,9 +221,9 @@ class Consts(object):
                          'sequence': {'Collection':
                                       ['id', 'count',
                                        'machineConfigurations']}}
-    
+
     MACHINEIMAGE_METADATA = {'attributes': {'property': ['minRam', 'minDisk']},
-                         'plurals': {'properties':'property'},
+                         'plurals': {'properties': 'property'},
                          'sequence': {'MachineImage':
                                       ['id', 'name', 'description',
                                        'created', 'updated', 'property',
@@ -234,15 +235,15 @@ class Consts(object):
                          'plurals': {'machineImages': 'MachineImage'},
                          'sequence': {'Collection':
                                       ['id', 'count', 'machineImages']}}
-    
+
     MACHINEVOLUME_METADATA = {'attributes': {'volume': 'href',
                                         'operation': ['rel', 'href']},
                          'plurals': {},
-                         'sequence': {'MachineVolume':['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'initialLocation','volume'
-                                       'operation']}}
-    
+                         'sequence': {'MachineVolume': ['id', 'name',
+                                       'description', 'created', 'updated',
+                                       'property', 'initialLocation',
+                                       'volume' 'operation']}}
+
     MACHINEVOLUME_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
                                         'volume': 'href',
                                         'operation': ['rel', 'href']},
@@ -251,11 +252,11 @@ class Consts(object):
                          'sequence': {'Collection':
                                       ['id', 'count', 'machineVolumes',
                                        'operation']}}
-    
+
     NETWORK_METADATA = {'attributes': {'networkInterfaces': 'resourceURI',
                                         'Entry': 'resourceURI'},
                          'plurals': {'entries': 'Entry'}}
-    
+
     NETWORK_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
                                        'Entry': 'resourceURI',
                                        'addresses': 'href'},
@@ -264,7 +265,8 @@ class Consts(object):
                                       ['id', 'entries'],
                                       'Entry':
                                       ['id', 'addresses']}}
-    
+
+
 class Controller(object):
     def __init__(self, conf, app, req, tenant_id, *args):
         self.conf = conf

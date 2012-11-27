@@ -37,7 +37,6 @@ class MachineConfigCtrler(Controller):
         self.entity_uri = 'MachineConfiguration'
         self.metadata = Consts.MACHINECONFIG_METADATA
 
-
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
         """
@@ -63,7 +62,7 @@ class MachineConfigCtrler(Controller):
                 match_up(body, flavor, 'memory', 'ram')
                 body['disks'] = []
                 body['disks'].append({'capacity':
-                                      int(flavor.get('disk')) * 1000 })
+                                      int(flavor.get('disk')) * 1000})
 
             if self.res_content_type == 'application/xml':
                 body.pop('resourceURI')
@@ -96,7 +95,7 @@ class MachineConfigColCtrler(Controller):
                                                      *args)
         self.os_path = '/%s/flavors' % (tenant_id)
         self.entity_uri = 'MachineConfigurationCollection'
-        
+
         self.metadata = Consts.MACHINECONFIG_COL_METADATA
 
     # Use GET to handle all container read related operations.
@@ -125,7 +124,7 @@ class MachineConfigColCtrler(Controller):
             body['resourceURI'] = '/'.join([self.uri_prefix, self.entity_uri])
             body['id'] = '/'.join([self.tenant_id, self.entity_uri])
             body['machineConfigurations'] = []
-            flavors = content.get('flavors',[])
+            flavors = content.get('flavors', [])
             for flavor in flavors:
                 entry = {}
                 entry['resourceURI'] = '/'.join([self.uri_prefix,

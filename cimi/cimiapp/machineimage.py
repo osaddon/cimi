@@ -121,7 +121,7 @@ class MachineImageColCtrler(Controller):
             body['resourceURI'] = '/'.join([self.uri_prefix, self.entity_uri])
             body['id'] = '/'.join([self.tenant_id, self.entity_uri])
             body['machineImages'] = []
-            images = content.get('images',[])
+            images = content.get('images', [])
             for image in images:
                 entry = {}
                 entry['resourceURI'] = '/'.join([self.uri_prefix,

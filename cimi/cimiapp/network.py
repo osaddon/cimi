@@ -92,7 +92,7 @@ class NetworkInterfaceColCtrler(Controller):
             body['id'] = concat(self.tenant_id,
                                 '/networkInterfacesCollection/',
                                 parts[0])
-            body['resourceURI'] = concat(self.uri_prefix,'/', self.entity_uri)
+            body['resourceURI'] = concat(self.uri_prefix, '/', self.entity_uri)
             body['entries'] = self._get_entry(data, parts[0])
 
             if self.res_content_type == 'application/xml':

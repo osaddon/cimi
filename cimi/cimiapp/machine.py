@@ -70,11 +70,12 @@ class MachineCtrler(Controller):
             body['networkInterfaces'] = {'href': concat(self.tenant_id,
                     '/networkInterfacesCollection/', parts[0])}
 
-            body['volumes'] = {'href': concat(self.tenant_id,'/MachineVolumeCollection/',
+            body['volumes'] = {'href': concat(self.tenant_id,
+                                              '/MachineVolumeCollection/',
                                               parts[0])}
             # Send a request to get the details on flavor
             env = self._fresh_env(req)
-            env['PATH_INFO'] = '/%s/flavors/%s' % (self.tenant_id, 
+            env['PATH_INFO'] = '/%s/flavors/%s' % (self.tenant_id,
                                                    data['flavor']['id'])
             new_req = Request(env)
             res = new_req.get_response(self.app)
@@ -83,10 +84,10 @@ class MachineCtrler(Controller):
                 match_up(body, flavor, 'cpu', 'vcpus')
                 body['memory'] = int(flavor.get('ram')) * 1000
                 disks = []
-                disks.append({'resourceURI':'/'.join([self.uri_prefix,
+                disks.append({'resourceURI': '/'.join([self.uri_prefix,
                                                       'DiskCollection']),
                               'capacity': int(flavor.get('disk')) * 1000000,
-                              'format':''})
+                              'format': ''})
                 body['disks'] = disks
 
             # deal with machine operations
@@ -169,7 +170,7 @@ class MachineCtrler(Controller):
             resp = get_err_response('NotImplemented')
 
         return resp
-    
+
 
 class MachineColCtrler(Controller):
     """
@@ -183,7 +184,6 @@ class MachineColCtrler(Controller):
         self.metadata = Consts.MACHINE_COL_METADATA
 
         self.machine_metadata = Consts.MACHINE_METADATA
-
 
     # Use GET to handle all container read related operations.
     def GET(self, req, *parts):
@@ -203,7 +203,7 @@ class MachineColCtrler(Controller):
                                             self.entity_uri])
 
             body['machines'] = []
-            machines = content.get('servers',[])
+            machines = content.get('servers', [])
             for machine in machines:
                 entry = {}
                 entry['resourceURI'] = '/'.join([self.uri_prefix,
@@ -217,7 +217,7 @@ class MachineColCtrler(Controller):
             body['count'] = len(body['machines'])
             # deal with machine operations
             operations = []
-            operations.append(self._create_op('add', 
+            operations.append(self._create_op('add',
                                               '/'.join([self.tenant_id,
                                                        'machineCollection'])))
             body['operations'] = operations

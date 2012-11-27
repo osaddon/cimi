@@ -66,7 +66,7 @@ class NetworkAddressCtrler(Controller):
                                 self.address_key, '/',
                                 self.machine_ip)
             adds = {}
-            match_up(adds, data, 'addr', 'addresses/'+self.address_key)
+            match_up(adds, data, 'addr', 'addresses/' + self.address_key)
             ips = adds.get('addr')
             if ips:
                 for ip in ips:
@@ -92,6 +92,7 @@ class NetworkAddressCtrler(Controller):
         else:
             return res
 
+
 class NetworkAddressColCtrler(Controller):
     """
     Handles machine collection request.
@@ -109,7 +110,7 @@ class NetworkAddressColCtrler(Controller):
 
         def _make_entry(entries):
             adds = {}
-            match_up(adds, data, 'addr', 'addresses/'+self.address_key)
+            match_up(adds, data, 'addr', 'addresses/' + self.address_key)
             if adds.get('addr'):
                 ips = adds.get('addr')
                 for addr in ips:
