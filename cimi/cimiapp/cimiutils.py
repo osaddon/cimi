@@ -135,6 +135,17 @@ def has_extra(data_from, keys_to_exclude):
     return False
 
 
+def remove_member(data, member):
+    if isinstance(data, dict):
+        if member in data.keys():
+            data.pop(member)
+        for key in data:
+            remove_member(data.get(key), member)
+    elif isinstance(data, list):
+        for one in data:
+            remove_member(one, member)
+
+
 def map_status(map, key):
     if map.get(key) == 'ACTIVE':
         map[key] = 'STARTED'

@@ -24,7 +24,7 @@ from cimibase import make_response_data
 from cimibase import get_request_data
 from cimiutils import concat, get_err_response
 from cimiutils import match_up, sub_path, access_resource
-from cimiutils import map_status
+from cimiutils import map_status, remove_member
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
 LOG = logging.getLogger(__name__)
@@ -112,6 +112,7 @@ class MachineCtrler(Controller):
 
             if self.res_content_type == 'application/xml':
                 response_data = {'Machine': body}
+                remove_member(response_data, 'resourceURI')
             else:
                 body['resourceURI'] = '/'.join([self.uri_prefix,
                                                self.entity_uri])
@@ -257,6 +258,7 @@ class MachineColCtrler(Controller):
 
             if self.res_content_type == 'application/xml':
                 response_data = {'Collection': body}
+                remove_member(response_data, 'resourceURI')
             else:
                 response_data = body
 
@@ -343,6 +345,7 @@ class MachineColCtrler(Controller):
                         'password': resp_body_data.get('adminPass')}
                     if self.res_content_type == 'application/xml':
                         response_data = {'Machine': resp_data}
+                        remove_member(response_data, 'resourceURI')
                     else:
                         response_data = resp_data
 

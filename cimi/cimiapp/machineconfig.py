@@ -20,7 +20,7 @@ import copy
 
 from cimibase import Controller, Consts
 from cimibase import make_response_data
-from cimiutils import concat, match_up
+from cimiutils import concat, match_up, remove_member
 
 LOG = logging.getLogger(__name__)
 
@@ -65,8 +65,8 @@ class MachineConfigCtrler(Controller):
                                       int(flavor.get('disk')) * 1000})
 
             if self.res_content_type == 'application/xml':
-                body.pop('resourceURI')
                 response_data = {self.entity_uri: body}
+                remove_member(response_data, 'resourceURI')
             else:
                 response_data = body
 
@@ -121,7 +121,6 @@ class MachineConfigColCtrler(Controller):
         if res.status_int == 200:
             content = json.loads(res.body)
             body = {}
-            body['resourceURI'] = '/'.join([self.uri_prefix, self.entity_uri])
             body['id'] = '/'.join([self.tenant_id, self.entity_uri])
             body['machineConfigurations'] = []
             flavors = content.get('flavors', [])
@@ -138,8 +137,13 @@ class MachineConfigColCtrler(Controller):
             body['count'] = len(body['machineConfigurations'])
 
             if self.res_content_type == 'application/xml':
+                remove_member(body, 'resourceURI')
+                body['resourceURI'] = '/'.join([self.uri_prefix,
+                                                self.entity_uri])
                 response_data = {'Collection': body}
             else:
+                body['resourceURI'] = '/'.join([self.uri_prefix,
+                                                self.entity_uri])
                 response_data = body
 
             new_content = make_response_data(response_data,

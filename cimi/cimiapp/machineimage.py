@@ -20,7 +20,7 @@ import copy
 
 from cimibase import Controller, Consts
 from cimibase import make_response_data
-from cimiutils import concat, match_up, image_map_status
+from cimiutils import concat, match_up, image_map_status, remove_member
 
 LOG = logging.getLogger(__name__)
 
@@ -118,7 +118,6 @@ class MachineImageColCtrler(Controller):
         if res.status_int == 200:
             content = json.loads(res.body)
             body = {}
-            body['resourceURI'] = '/'.join([self.uri_prefix, self.entity_uri])
             body['id'] = '/'.join([self.tenant_id, self.entity_uri])
             body['machineImages'] = []
             images = content.get('images', [])
@@ -134,8 +133,13 @@ class MachineImageColCtrler(Controller):
 
             body['count'] = len(body['machineImages'])
             if self.res_content_type == 'application/xml':
+                remove_member(body, 'resourceURI')
+                body['resourceURI'] = '/'.join([self.uri_prefix,
+                                                self.entity_uri])
                 response_data = {'Collection': body}
             else:
+                body['resourceURI'] = '/'.join([self.uri_prefix,
+                                                self.entity_uri])
                 response_data = body
 
             new_content = make_response_data(response_data,
