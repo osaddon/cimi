@@ -271,6 +271,7 @@ class Consts(object):
     MACHINE_ACTIONS = [CIMI_NS + '/action/start',
                        CIMI_NS + '/action/restart',
                        CIMI_NS + '/action/pause',
+                       CIMI_NS + '/action/stop',
                        CIMI_NS + '/action/suspend']
 
     # use the OS machine status and the cimi action to make a key, then

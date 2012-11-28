@@ -338,7 +338,7 @@ class MachineColCtrler(Controller):
                     id = resp_body_data.get('id')
                     resp_data = {}
                     match_up(resp_data, data, 'name', 'name')
-                    resp_data['id'] = concat(self.tenant_id, '/machine/', id)
+                    resp_data['id'] = concat(self.tenant_id, '/Machine/', id)
                     resp_data['credentials'] = {'userName': 'root',
                         'password': resp_body_data.get('adminPass')}
                     if self.res_content_type == 'application/xml':
