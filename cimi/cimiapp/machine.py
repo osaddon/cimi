@@ -347,6 +347,7 @@ class MachineColCtrler(Controller):
                 if adminPass:
                     new_body['adminPass'] = adminPass
 
+                self.os_path = '/%s/servers' % (self.tenant_id)
                 new_req = self._fresh_request(req)
 
                 new_req.body = json.dumps({'server': new_body})

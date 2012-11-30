@@ -228,6 +228,7 @@ class VolumeColCtrler(Controller):
                                                        {'capacity': None}}}):
                     return get_err_response('BadRequest')
 
+                self.os_path = '/%s/volumes' % (self.tenant_id)
                 env = self._fresh_env(req)
                 env['SERVER_PORT'] = self.conf.get('volume_endpoint_port')
                 env['SCRIPT_NAME'] = '/v1'
