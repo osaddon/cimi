@@ -162,6 +162,16 @@ def image_map_status(map, key):
         map[key] = 'ERROR'
 
 
+VOLUME_STATE_MAP = {'creating': 'CREATING',
+                    'available': 'AVAILABLE',
+                    'deleting': 'DELETING',
+                    'error': 'ERROR',
+                    'error_deleting': 'ERROR'}
+
+def map_volume_state(value):
+    return VOLUME_STATE_MAP.get(value, 'UNKNOWN')
+
+
 def access_resource(env, method, path, get_body=False,
                     query_string=None, body=None):
     """

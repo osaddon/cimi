@@ -22,7 +22,7 @@ from cimibase import Controller, Consts
 from cimibase import CimiXMLSerializer
 from cimibase import make_response_data
 from cimibase import get_request_data
-from cimiutils import concat, get_err_response
+from cimiutils import concat, get_err_response, map_volume_state
 from cimiutils import match_up, sub_path, access_resource, has_extra
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
@@ -68,8 +68,10 @@ class VolumeCtrler(Controller):
             match_up(body, data, 'description', 'display_description')
             match_up(body, data, 'created', 'created_at')
             match_up(body, data, 'capacity', 'size')
-            body['capacity'] = int(body['capacity']) * 1000 * 1000
-            match_up(body, data, 'state', 'status')
+            body['capacity'] = int(body['capacity']) * 1000000
+            body['state'] = map_volume_state(data['status'])
+            body['bootable'] = 'false'
+            body['type'] = 'http://schemas.dmtf.org/cimi/1/mapped'
 
             if self.res_content_type == 'application/xml':
                 response_data = {'Volume': body}
@@ -121,7 +123,7 @@ class VolumeColCtrler(Controller):
     def __init__(self, conf, app, req, tenant_id, *args):
         super(VolumeColCtrler, self).__init__(conf, app, req, tenant_id,
                                                      *args)
-        self.os_path = '/%s/volumes' % (tenant_id)
+        self.os_path = '/%s/volumes/detail' % (tenant_id)
         self.entity_uri = 'VolumeCollection'
         self.metadata = Consts.VOLUME_COL_METADATA
         self.volume_metadata = Consts.VOLUME_METADATA
@@ -151,10 +153,18 @@ class VolumeColCtrler(Controller):
             volumes = content.get('volumes', [])
             for volume in volumes:
                 entry = {}
-                entry['resourceURI'] = '/'.join([self.uri_prefix,
+                if self.res_content_type != 'application/xml':
+                    entry['resourceURI'] = '/'.join([self.uri_prefix,
                                                  'Volume'])
                 entry['id'] = '/'.join([self.tenant_id, 'Volume',
                                         volume['id']])
+                entry['name'] = volume['display_name']
+                entry['description'] = volume['display_description']
+                entry['created'] = volume['created_at']
+                entry['state'] = map_volume_state(volume['status'])
+                entry['capacity'] = int(volume['size']) * 1000000
+                entry['bootable'] = 'false'
+                entry['type'] = 'http://schemas.dmtf.org/cimi/1/mapped'
 
                 body['volumes'].append(entry)
 

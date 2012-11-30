@@ -145,11 +145,6 @@ class Consts(object):
     RESPONSE_VERSION_KEY = 'CIMI-Specification-Version'
     RESPONSE_VERSION_VALUE = '1.0.0'
     CIMI_NS = 'http://schemas.dmtf.org/cimi/1'
-    VOLUME_COL_METADATA = {'attributes':
-        {'Collection': 'resourceURI', 'Entry': 'resourceURI',
-         'volume': 'href'},
-        'plurals': {'volumes': 'Volume'},
-        'sequence': {'Collection': ['id', 'count', 'volumes', 'operation']}}
 
     VOLUME_METADATA = {'attributes':
         {'property': 'key', 'volumes': 'href',
@@ -161,6 +156,14 @@ class Consts(object):
                                 'state', 'type', 'capacity',
                                 'bootable', 'images', 'meters',
                                 'eventLog', 'operations']}}
+
+    VOLUME_COL_METADATA = {'attributes':
+        {'Collection': 'resourceURI', 'Entry': 'resourceURI',
+         'volume': 'href'},
+        'plurals': {'volumes': 'Volume'},
+        'sequence': {'Collection': ['id', 'count', 'volumes', 'operation'],
+                     'Volume': VOLUME_METADATA['sequence']['Volume']}}
+
     ADDRESS_METADATA = {'attributes': {'property': 'version'},
                          'plurals': {'properties': 'property'},
                          'sequence': {'Address':
