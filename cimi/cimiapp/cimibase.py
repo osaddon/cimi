@@ -218,14 +218,13 @@ class Consts(object):
                                        'updated', 'property', 'cpu', 'memory',
                                        'disks', 'operation'],
                                       'disk': ['capacity']}}
-    MACHINECONFIG_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
-                                       'Entry': 'resourceURI',
-                                       'machineConfiguration': 'href'},
-                         'plurals': {'machineConfigurations':
-                                     'MachineConfiguration'},
-                         'sequence': {'Collection':
-                                      ['id', 'count',
-                                       'machineConfigurations']}}
+    MACHINECONFIG_COL_METADATA = {'attributes':
+        {'Collection': 'resourceURI', 'Entry': 'resourceURI',
+         'machineConfiguration': 'href'},
+        'plurals': {'machineConfigurations': 'MachineConfiguration'},
+        'sequence': {'Collection': ['id', 'count', 'machineConfigurations'],
+            'MachineConfiguration':
+                MACHINECONFIG_METADATA['sequence']['MachineConfiguration']}}
 
     MACHINEIMAGE_METADATA = {'attributes': {'property': ['minRam', 'minDisk']},
                          'plurals': {'properties': 'property'},

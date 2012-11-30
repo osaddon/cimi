@@ -59,10 +59,9 @@ class MachineConfigCtrler(Controller):
                                        self.config_id])
                 match_up(body, flavor, 'name', 'name')
                 match_up(body, flavor, 'cpu', 'vcpus')
-                match_up(body, flavor, 'memory', 'ram')
-                body['disks'] = []
-                body['disks'].append({'capacity':
-                                      int(flavor.get('disk')) * 1000})
+                body['memory'] = int(flavor.get('ram')) * 1000
+                body['disks'] = [{'capacity': int(flavor.get('disk')) * 1000,
+                                  'format': 'UNKNOWN'}]
 
             if self.res_content_type == 'application/xml':
                 response_data = {self.entity_uri: body}
@@ -93,7 +92,7 @@ class MachineConfigColCtrler(Controller):
     def __init__(self, conf, app, req, tenant_id, *args):
         super(MachineConfigColCtrler, self).__init__(conf, app, req, tenant_id,
                                                      *args)
-        self.os_path = '/%s/flavors' % (tenant_id)
+        self.os_path = '/%s/flavors/detail' % (tenant_id)
         self.entity_uri = 'MachineConfigurationCollection'
 
         self.metadata = Consts.MACHINECONFIG_COL_METADATA
@@ -126,18 +125,23 @@ class MachineConfigColCtrler(Controller):
             flavors = content.get('flavors', [])
             for flavor in flavors:
                 entry = {}
-                entry['resourceURI'] = '/'.join([self.uri_prefix,
-                                            'MachineConfiguration'])
+                if self.res_content_type != 'application/xml':
+                    entry['resourceURI'] = '/'.join([self.uri_prefix,
+                        'MachineConfiguration'])
                 entry['id'] = '/'.join([self.tenant_id,
                                         'MachineConfiguration',
                                         flavor['id']])
+                entry['name'] = flavor['name']
+                entry['cpu'] = flavor['vcpus']
+                entry['memory'] = int(flavor['ram']) * 1000
+                entry['disks'] = [{'capacity': int(flavor['disk']) * 1000,
+                                   'format':'UNKNOWN'}]
 
                 body['machineConfigurations'].append(entry)
 
             body['count'] = len(body['machineConfigurations'])
 
             if self.res_content_type == 'application/xml':
-                remove_member(body, 'resourceURI')
                 body['resourceURI'] = '/'.join([self.uri_prefix,
                                                 self.entity_uri])
                 response_data = {'Collection': body}
