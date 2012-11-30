@@ -23,7 +23,7 @@ from cimibase import make_response_data
 from cimibase import get_request_data
 from cimiutils import concat, get_err_response
 from cimiutils import match_up, sub_path
-from cimiutils import map_status, remove_member
+from cimiutils import remove_member
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
 LOG = logging.getLogger(__name__)

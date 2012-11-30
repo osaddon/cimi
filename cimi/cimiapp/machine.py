@@ -24,7 +24,7 @@ from cimibase import make_response_data
 from cimibase import get_request_data
 from cimiutils import concat, get_err_response
 from cimiutils import match_up, sub_path, access_resource
-from cimiutils import map_status, remove_member
+from cimiutils import remove_member, map_machine_state
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
 LOG = logging.getLogger(__name__)
@@ -63,8 +63,7 @@ class MachineCtrler(Controller):
             match_up(body, data, 'name', 'name')
             match_up(body, data, 'created', 'created')
             match_up(body, data, 'updated', 'updated')
-            match_up(body, data, 'state', 'status')
-            map_status(body, 'state')
+            body['state'] = map_machine_state(data['status'])
 
             body['networkInterfaces'] = {'href': '/'.join([self.tenant_id,
                 'NetworkInterfacesCollection', parts[0]])}
@@ -213,7 +212,7 @@ class MachineColCtrler(Controller):
     def __init__(self, conf, app, req, tenant_id, *args):
         super(MachineColCtrler, self).__init__(conf, app, req, tenant_id,
                                                      *args)
-        self.os_path = '/%s/servers' % (tenant_id)
+        self.os_path = '/%s/servers/detail' % (tenant_id)
         self.entity_uri = 'MachineCollection'
         self.metadata = Consts.MACHINE_COL_METADATA
 
@@ -236,15 +235,44 @@ class MachineColCtrler(Controller):
             body['resourceURI'] = '/'.join([self.uri_prefix,
                                             self.entity_uri])
 
+            env = self._fresh_env(req)
+            env['PATH_INFO'] = '/%s/flavors/detail' % (self.tenant_id)
+            new_req = Request(env)
+            res = new_req.get_response(self.app)
+            if res.status_int == 200:
+                flavors = json.loads(res.body).get('flavors')
+            else:
+                flavors = []
+
+            keyed_flavors = {}
+            for flavor in flavors:
+                keyed_flavors[flavor['id']] = flavor
+
             body['machines'] = []
             machines = content.get('servers', [])
             for machine in machines:
                 entry = {}
-                entry['resourceURI'] = '/'.join([self.uri_prefix,
+                if self.res_content_type != 'application/xml':
+                    entry['resourceURI'] = '/'.join([self.uri_prefix,
                                                  'Machine'])
                 entry['id'] = concat(self.tenant_id, '/',
                                      'machine/',
                                      machine['id'])
+                entry['name'] = machine['name']
+                entry['property'] = machine['metadata']
+                entry['created'] = machine['created']
+                entry['updated'] = machine['updated']
+                entry['state'] = map_machine_state(machine['status'])
+                flavor = keyed_flavors[machine['flavor']['id']]
+                entry['cpu'] = flavor['vcpus']
+                entry['memory'] = int(flavor['ram']) * 1000
+
+                entry['volumes'] = {'href': '/'.join([self.tenant_id,
+                    'MachineVolumeCollection', machine['id']])}
+                entry['networkInterfaces'] = {'href': '/'.join([self.tenant_id,
+                    'NetworkInterfacesCollection', machine['id']])}
+                entry['disks'] = {'href': '/'.join([self.tenant_id,
+                    'MachineDiskCollection', machine['id']])}
 
                 body['machines'].append(entry)
 
@@ -257,8 +285,9 @@ class MachineColCtrler(Controller):
             body['operations'] = operations
 
             if self.res_content_type == 'application/xml':
+                body['resourceURI'] = '/'.join([self.uri_prefix,
+                                                'MachineCollection'])
                 response_data = {'Collection': body}
-                remove_member(response_data, 'resourceURI')
             else:
                 response_data = body
 

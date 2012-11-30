@@ -189,28 +189,25 @@ class Consts(object):
                                        'baseURI', 'machines', 'machineConfigs',
                                        'machineImages', 'volumes',
                                        'operation']}}
-    MACHINE_METADATA = {'attributes': {'property': 'key',
-                                        'volumes': 'href',
-                                        'disks': 'href',
-                                        'networkInterfaces': 'href',
-                                        'Entry': 'resourceURI',
-                                        'operation': ['rel', 'href']},
-                         'plurals': {'entries': 'Entry'},
-                         'sequence': {'Machine':
-                                      ['id', 'name', 'description',
-                                       'created', 'updated', 'property',
-                                       'state', 'cpu', 'memory', 'disks',
-                                       'networkInterfaces', 'credentials',
-                                       'operations']}}
-    MACHINE_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
-                                       'Entry': 'resourceURI',
-                                       'machine': 'href',
-                                       'operation': ['rel', 'href']},
-                         'plurals': {'machines': 'Machine',
-                                     'operations': 'operation'},
-                         'sequence': {'Collection':
-                                      ['id', 'count', 'machines',
-                                       'operation']}}
+
+    MACHINE_METADATA = {'attributes':
+        {'property': 'key', 'volumes': 'href', 'disks': 'href',
+         'networkInterfaces': 'href', 'Entry': 'resourceURI',
+         'operation': ['rel', 'href']},
+        'plurals': {'entries': 'Entry'},
+        'sequence': {'Machine': ['id', 'name', 'description', 'created',
+                                 'updated', 'property', 'state', 'cpu',
+                                 'memory', 'disks', 'volumes',
+                                 'networkInterfaces',
+                                 'credentials', 'operations']}}
+    MACHINE_COL_METADATA = {'attributes':
+        {'Collection': 'resourceURI', 'Entry': 'resourceURI',
+         'disks': 'href', 'networkInterfaces': 'href', 'volumes': 'href',
+         'machine': 'href', 'operation': ['rel', 'href']},
+        'plurals': {'machines': 'Machine', 'operations': 'operation'},
+        'sequence': {'Collection': ['id', 'count', 'machines', 'operation'],
+                     'Machine': MACHINE_METADATA['sequence']['Machine']}}
+
     MACHINECONFIG_METADATA = {'attributes': {},
                          'plurals': {'disks': 'disk'},
                          'sequence': {'MachineConfiguration':

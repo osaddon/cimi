@@ -146,13 +146,16 @@ def remove_member(data, member):
             remove_member(one, member)
 
 
-def map_status(map, key):
-    if map.get(key) == 'ACTIVE':
-        map[key] = 'STARTED'
-    elif map.get(key) == 'BUILDING':
-        map[key] = 'CREATING'
-    else:
-        map[key] = 'ERROR'
+MACHINE_STATE_MAP = {'ACTIVE': 'STARTED', 'REBOOT': 'STARTING',
+    'HARD_REBOOT': 'STARTING', 'PASSWORD': 'UNKNOWN', 'REBUILD': 'STARTING',
+    'MIGRATING': 'STARTING', 'RESIZE': 'STARTING', 'BUILD': 'STARTING',
+    'SHUTOFF': 'STOPPED', 'VERIFY_RESIZE': 'STARTING',
+    'REVERT_RESIZE': 'STARTING', 'PAUSED': 'PAUSED', 'SUSPENDED': 'SUSPENDED',
+    'RESCUE': 'STARTING', 'ERROR': 'ERROR', 'DELETED': 'DELETING'}
+
+
+def map_machine_state(value):
+    return MACHINE_STATE_MAP.get(value, 'UNKNOWN')
 
 
 VOLUME_STATE_MAP = {'creating': 'CREATING',
@@ -160,6 +163,7 @@ VOLUME_STATE_MAP = {'creating': 'CREATING',
                     'deleting': 'DELETING',
                     'error': 'ERROR',
                     'error_deleting': 'ERROR'}
+
 
 def map_volume_state(value):
     return VOLUME_STATE_MAP.get(value, 'UNKNOWN')
