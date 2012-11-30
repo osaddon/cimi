@@ -233,13 +233,13 @@ class Consts(object):
                                       ['id', 'name', 'description',
                                        'created', 'updated', 'property',
                                        'state', 'type', 'imageLocation',
-                                       'operations']}}
+                                       'relatedImage', 'operations']}}
+
     MACHINEIMAGE_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
-                                       'Entry': 'resourceURI',
-                                       'machineImage': 'href'},
-                         'plurals': {'machineImages': 'MachineImage'},
-                         'sequence': {'Collection':
-                                      ['id', 'count', 'machineImages']}}
+        'Entry': 'resourceURI', 'machineImage': 'href'},
+        'plurals': {'machineImages': 'MachineImage'},
+        'sequence': {'Collection': ['id', 'count', 'machineImages'],
+            'MachineImage': MACHINEIMAGE_METADATA['sequence']['MachineImage']}}
 
     MACHINEVOLUME_METADATA = {'attributes': {'volume': 'href',
                                         'operation': ['rel', 'href']},
@@ -247,7 +247,7 @@ class Consts(object):
                          'sequence': {'MachineVolume': ['id', 'name',
                                        'description', 'created', 'updated',
                                        'property', 'initialLocation',
-                                       'volume' 'operation']}}
+                                       'volume', 'operation']}}
 
     MACHINEVOLUME_COL_METADATA = {'attributes': {'Collection': 'resourceURI',
                                         'volume': 'href',

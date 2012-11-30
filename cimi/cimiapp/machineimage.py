@@ -20,7 +20,8 @@ import copy
 
 from cimibase import Controller, Consts
 from cimibase import make_response_data
-from cimiutils import concat, match_up, image_map_status, remove_member
+from cimiutils import concat, match_up, remove_member
+from cimiutils import map_image_state
 
 LOG = logging.getLogger(__name__)
 
@@ -52,13 +53,13 @@ class MachineImageCtrler(Controller):
             image = json.loads(res.body).get('image')
             if image:
                 body = {}
+                body['type'] = 'IMAGE'
                 body['id'] = '/'.join([self.tenant_id, self.entity_uri,
                                        self.image_id])
                 match_up(body, image, 'name', 'name')
                 match_up(body, image, 'created', 'created')
                 match_up(body, image, 'updated', 'updated')
-                match_up(body, image, 'state', 'status')
-                image_map_status(body, 'state')
+                body['state'] = map_image_state(image['status'])
                 body['imageLocation'] = body['id']
 
             if self.res_content_type == 'application/xml':
@@ -91,7 +92,7 @@ class MachineImageColCtrler(Controller):
     def __init__(self, conf, app, req, tenant_id, *args):
         super(MachineImageColCtrler, self).__init__(conf, app, req, tenant_id,
                                                     *args)
-        self.os_path = '/%s/images' % (tenant_id)
+        self.os_path = '/%s/images/detail' % (tenant_id)
         self.entity_uri = 'MachineImageCollection'
         self.metadata = Consts.MACHINEIMAGE_COL_METADATA
 
@@ -128,6 +129,12 @@ class MachineImageColCtrler(Controller):
                 entry['id'] = '/'.join([self.tenant_id,
                                      'MachineImage',
                                      image['id']])
+                entry['type'] = 'IMAGE'
+                entry['name'] = image['name']
+                entry['created'] = image['created']
+                entry['updated'] = image['updated']
+                entry['state'] = map_image_state(image['status'])
+                entry['imageLocation'] = entry['id']
 
                 body['machineImages'].append(entry)
 

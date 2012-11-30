@@ -155,13 +155,6 @@ def map_status(map, key):
         map[key] = 'ERROR'
 
 
-def image_map_status(map, key):
-    if map.get(key) == 'ACTIVE':
-        map[key] = 'AVAILABLE'
-    else:
-        map[key] = 'ERROR'
-
-
 VOLUME_STATE_MAP = {'creating': 'CREATING',
                     'available': 'AVAILABLE',
                     'deleting': 'DELETING',
@@ -170,6 +163,15 @@ VOLUME_STATE_MAP = {'creating': 'CREATING',
 
 def map_volume_state(value):
     return VOLUME_STATE_MAP.get(value, 'UNKNOWN')
+
+
+IMAGE_STATE_MAP = {'queued': 'CREATING', 'saving': 'CREATING',
+                   'active': 'AVAILABLE', 'killed': 'DELETED',
+                   'deleted': 'DELETED', 'pending_delete': 'DELETING'}
+
+
+def map_image_state(value):
+    return IMAGE_STATE_MAP.get(value.lower(), 'UNKNOWN')
 
 
 def access_resource(env, method, path, get_body=False,
