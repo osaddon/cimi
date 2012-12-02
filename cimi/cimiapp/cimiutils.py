@@ -65,9 +65,12 @@ def best_match(content_type):
     and response content type
     """
 
-    req = Request.blank('/')
-    req.accept = content_type
-    return req.accept.best_match(CIMI_CONTENT_TYPES) or 'application/json'
+    try:
+        req = Request.blank('/')
+        req.accept = content_type
+        return req.accept.best_match(CIMI_CONTENT_TYPES) or 'application/json'
+    except:
+        return 'application/json'
 
 
 def get_href(data, member):

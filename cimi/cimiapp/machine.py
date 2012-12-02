@@ -259,7 +259,7 @@ class MachineColCtrler(Controller):
                                      'machine/',
                                      machine['id'])
                 entry['name'] = machine['name']
-                entry['property'] = machine['metadata']
+                #entry['property'] = machine['metadata']
                 entry['created'] = machine['created']
                 entry['updated'] = machine['updated']
                 entry['state'] = map_machine_state(machine['status'])
