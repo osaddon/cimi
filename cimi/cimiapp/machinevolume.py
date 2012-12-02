@@ -210,8 +210,7 @@ class MachineVolumeColCtrler(Controller):
 
                 volume_url = data.get('volume', {}).get('href')
                 if volume_url:
-                    tmp = volume_url.strip('/').split('/')
-                    volume_id = tmp[len(tmp) - 1]
+                    volume_id = volume_url.strip('/').split('/')[-1]
                 else:
                     return get_err_response('MalformedBody')
 

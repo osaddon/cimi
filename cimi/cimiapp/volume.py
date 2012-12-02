@@ -73,6 +73,13 @@ class VolumeCtrler(Controller):
             body['bootable'] = 'false'
             body['type'] = 'http://schemas.dmtf.org/cimi/1/mapped'
 
+            operations = []
+            operations.append(self._create_op('delete',
+                '/'.join([self.tenant_id, 'volume',
+                          parts[0]])))
+            body['operations'] = operations
+
+
             if self.res_content_type == 'application/xml':
                 response_data = {'Volume': body}
             else:
@@ -167,6 +174,11 @@ class VolumeColCtrler(Controller):
                 entry['type'] = 'http://schemas.dmtf.org/cimi/1/mapped'
 
                 body['volumes'].append(entry)
+            
+            operations = []
+            operations.append(self._create_op('add',
+                '/'.join([self.tenant_id, 'volumeCollection'])))
+            body['operations'] = operations
 
             body['count'] = len(body['volumes'])
             if self.res_content_type == 'application/xml':
@@ -221,13 +233,14 @@ class VolumeColCtrler(Controller):
                 # map the properties to metadata
                 match_up(new_body, data, 'metadata', 'properties')
                 # check if there are some extra things
-                if has_extra(data, {'resourceURI': None,
+                """
+                if has_extra(data, {'resourceURI': None, 'xmlns': None,
                                     'name': None, 'description': None,
                                     'properties': None,
                                     'volumeTemplate': {'volumeConfig':
                                                        {'capacity': None}}}):
                     return get_err_response('BadRequest')
-
+                """
                 self.os_path = '/%s/volumes' % (self.tenant_id)
                 env = self._fresh_env(req)
                 env['SERVER_PORT'] = self.conf.get('volume_endpoint_port')

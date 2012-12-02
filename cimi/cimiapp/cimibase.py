@@ -328,6 +328,7 @@ class Controller(object):
         env['PATH_INFO'] = self.os_path
         # we will always use json format to get Nova information
         env['HTTP_ACCEPT'] = 'application/json'
+        env['CONTENT_TYPE'] = 'application/json'
 
         # need to remove this header, otherwise, it will always take the
         # original request accept content type
