@@ -67,7 +67,7 @@ def best_match(content_type):
 
     try:
         req = Request.blank('/')
-        req.accept = content_type
+        req.accept = content_type.lower()
         return req.accept.best_match(CIMI_CONTENT_TYPES) or 'application/json'
     except:
         return 'application/json'
