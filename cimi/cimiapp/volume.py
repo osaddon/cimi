@@ -268,6 +268,7 @@ class VolumeColCtrler(Controller):
                     resp_data['id'] = ''.join([self.tenant_id,
                                                '/volume/',
                                                data.get('id')])
+                    location = resp_data['id']
                     if self.res_content_type == 'application/xml':
                         response_data = {'Volume': resp_data}
                     else:
@@ -282,7 +283,9 @@ class VolumeColCtrler(Controller):
                     resp = Response()
                     self._fixup_cimi_header(resp)
                     resp.headers['Content-Type'] = self.res_content_type
-                    resp.headers['Location'] = resp_data['id']
+                    resp.headers['Location'] = \
+                        '/'.join([self.request_prefix,
+                                  location])
                     resp.status = 201
                     resp.body = new_content
                     return resp

@@ -264,7 +264,8 @@ class MachineVolumeColCtrler(Controller):
                     resp = Response()
                     self._fixup_cimi_header(resp)
                     resp.headers['Content-Type'] = self.res_content_type
-                    resp.headers['Location'] = body['id']
+                    resp.headers['Location'] = \
+                        '/'.join([self.request_prefix, body['id']])
                     resp.status = 201
                     resp.body = new_content
                     return resp
