@@ -364,6 +364,8 @@ class MachineColCtrler(Controller):
                     env['REQUEST_METHOD'] = 'GET'
                     new_req = Request(env)
                     resp = new_req.get_response(self.app)
+                    resp_data = {}
+                    resp_data['id'] = concat(self.tenant_id, '/Machine/', id)
                     resp.status = 201
                 elif resp.status_int == 202:
                     resp_body_data = json.loads(resp.body).get('server')
@@ -386,6 +388,7 @@ class MachineColCtrler(Controller):
                     resp = Response()
                     self._fixup_cimi_header(resp)
                     resp.headers['Content-Type'] = self.res_content_type
+                    resp.headers['Location'] = resp_data['id']
                     resp.status = 202
                     resp.body = new_content
                 return resp

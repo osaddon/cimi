@@ -282,6 +282,7 @@ class VolumeColCtrler(Controller):
                     resp = Response()
                     self._fixup_cimi_header(resp)
                     resp.headers['Content-Type'] = self.res_content_type
+                    resp.headers['Location'] = resp_data['id']
                     resp.status = 201
                     resp.body = new_content
                     return resp
