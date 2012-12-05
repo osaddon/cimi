@@ -373,6 +373,8 @@ class MachineColCtrler(Controller):
                     resp_body_data = json.loads(resp.body).get('server')
                     id = resp_body_data.get('id')
                     resp_data = {}
+                    resp_data['resourceURI'] = '/'.join([self.uri_prefix,
+                                            'Machine'])
                     match_up(resp_data, data, 'name', 'name')
                     resp_data['id'] = concat(self.tenant_id, '/Machine/', id)
                     resp_data['credentials'] = {'userName': 'root',

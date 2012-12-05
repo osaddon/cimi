@@ -23,7 +23,7 @@ from cimibase import make_response_data
 from cimibase import get_request_data
 from cimiutils import concat, get_err_response
 from cimiutils import match_up, sub_path
-from cimiutils import remove_member
+from cimiutils import remove_member, access_resource, map_volume_state
 from nova.api.openstack.wsgi import XMLDictSerializer, JSONDictSerializer
 
 LOG = logging.getLogger(__name__)
@@ -70,6 +70,25 @@ class MachineVolumeCtrler(Controller):
             operations.append(self._create_op('edit', body['id']))
             operations.append(self._create_op('delete', body['id']))
             body['operations'] = operations
+
+            # Try to get the volume state
+            env = self._fresh_env(req)
+            env['SERVER_PORT'] = self.conf.get('volume_endpoint_port')
+            env['SCRIPT_NAME'] = '/v1'
+            env['HTTP_HOST'] = '%s:%s' % \
+                (self.conf.get('volume_endpoint_host'),
+                 self.conf.get('volume_endpoint_port'))
+            env['CONTENT_LENGTH'] = 0
+
+            volume_path = '/'.join(['/v1', self.tenant_id, 'volumes',
+                                    data['volumeId']])
+            status, headers, volume_body, status_code = \
+                access_resource(env, 'GET',
+                                volume_path, True, None, None)
+
+            if status:
+                volume_data = json.loads(volume_body).get('volume')
+                body['state'] = map_volume_state(volume_data['status'])
 
             if self.res_content_type == 'application/xml':
                 response_data = {'MachineVolume': body}
@@ -250,6 +269,7 @@ class MachineVolumeColCtrler(Controller):
 
                     operations.append(self._create_op('delete', body['id']))
                     body['operations'] = operations
+                    body['state'] = 'ATTACHING'
 
                     if self.res_content_type == 'application/xml':
                         response_data = {'MachineVolume': body}

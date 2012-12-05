@@ -164,6 +164,9 @@ def map_machine_state(value):
 VOLUME_STATE_MAP = {'creating': 'CREATING',
                     'available': 'AVAILABLE',
                     'deleting': 'DELETING',
+                    'attaching': 'ATTACHING',
+                    'detaching': 'DETACHING',
+                    'in-use': 'INUSE',
                     'error': 'ERROR',
                     'error_deleting': 'ERROR'}
 
